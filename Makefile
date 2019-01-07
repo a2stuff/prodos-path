@@ -5,7 +5,7 @@ CCFLAGS = --config apple2-asm.cfg
 
 OUTDIR = out
 
-TARGETS = $(OUTDIR)/chtype.BIN
+TARGETS = $(OUTDIR)/path.BIN
 
 .PHONY: clean all
 all: $(OUTDIR) $(TARGETS)
@@ -27,3 +27,6 @@ $(OUTDIR)/%.o: %.s $(HEADERS)
 $(OUTDIR)/%.BIN $(OUTDIR)/%.SYS: $(OUTDIR)/%.o
 	$(CC65)/ld65 $(CCFLAGS) -o $@ $<
 	xattr -wx prodos.AuxType '00 20' $@
+
+$(OUTDIR)/%.CMD: $(OUTDIR)/%.o
+	$(CC65)/ld65 $(CCFLAGS) -o $@ $<

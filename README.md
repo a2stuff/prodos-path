@@ -1,30 +1,28 @@
-# chtype - change file type command for ProDOS
+# path - CMD executable path command for ProDOS
 
 Build with [ca65](https://cc65.github.io/doc/ca65.html)
 
 Installation:
 * Copy target to ProDOS disk
-* From BASIC.SYSTEM prompt, run: `-CHTYPE` from STARTUP (or by hand)
+* From BASIC.SYSTEM prompt, run: `-PATH` from STARTUP (or by hand)
 
 Usage:
 ```
-CHTYPE pathname[,Ttype][,Aauxtype][,S#][,D#]
+PATH            - view current search path
+PATH prefix     - set search path
 ```
 
-Examples:
-* `CHTYPE` - show current type/auxtype
-* `CHTYPE pic,T$08` - set just type
-* `CHTYPE file,A$0640` - set just auxtype
-* `CHTYPE now_basic,TBAS,A$801` - set both type and auxtype
-* `CHTYPE /root/was_bin,TSYS` - works with absolute paths
-* `CHTYPE as_text,TTXT,S6,D1` - can use slot/drive arguments too
+Once set, binary files of type `CMD` in the specified directory can be invoked by name. The command line will be present at $200 (GETLN input buffer).
+
+Example:
+```
+] -/hd/path              - install it
+] PATH /hd/cmds          - set PATH
+] PATH                   - verify path
+/hd/cmds
+] BELL                   - will invoke /hd/cmds/BELL if present
+```
 
 Notes:
 * Allocates a 1 page buffer to store the code
-* Relative or absolute paths can be used
-* Can be invoked as lower case (e.g. `chtype ...`)
-
-Resources:
-* [File Types Table](http://www.easy68k.com/paulrsm/6502/PDOS8TRM.HTM#B-1T) - [ProDOS 8 Technical Reference Manual](http://www.easy68k.com/paulrsm/6502/PDOS8TRM.HTM)
-* [File Types](https://www.kreativekorp.com/miscpages/a2info/filetypes.shtml) - [Jon Relay's Apple II Info Archives](https://www.kreativekorp.com/miscpages/a2info/)
-* [ProDOS File Types 2.0](https://macgui.com/kb/article/116) - [Mac GUI](https://macgui.com)
+* Can be invoked as lower case (e.g. `path ...`)

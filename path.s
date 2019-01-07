@@ -1,23 +1,14 @@
 ;;; ============================================================
 ;;;
-;;; CHTYPE - File type changing command for ProDOS-8
-;;;
-;;; Install:
-;;;          -CHTYPE         (from BASIC.SYSTEM prompt)
-;;; Usage:
-;;;          CHTYPE filename[,Ttype][,Aaux][,S#][,D#]
-;;;
-;;;  * filename can be relative or absolute path
-;;;  * specify T$nn to set file type
-;;;  * specify A$nnnn to set aux type info
-;;;  * type can be BIN, SYS, TXT (etc) or $nn
-;;;  * with neither T nor A option, prints current values
+;;; PATH
 ;;;
 ;;; Build with: ca65 - https://cc65.github.io/doc/ca65.html
 ;;;
 ;;; ============================================================
 
         .org $2000
+
+        .include "prodos.inc"
 
 ;;; ============================================================
 
@@ -27,69 +18,8 @@ INBUF           := $200         ; GETLN input buffer
 ;;; Monitor ROM routines
 
 CROUT   := $FD8E
-PRBYTE  := $FDDA
 COUT    := $FDED
 
-;;; ============================================================
-;;; ProDOS MLI / Global Page
-
-SET_FILE_INFO   = $C3
-GET_FILE_INFO   = $C4
-
-DATE            := $BF90
-
-;;; ============================================================
-;;; BASIC.SYSTEM Global Page
-
-EXTRNCMD        := $BE06        ; External command jmp vector
-ERROUT          := $BE09        ; Error routine jmp vector
-XTRNADDR        := $BE50        ; Ext cmd implementation addr
-
-XLEN            := $BE52        ; Length of command string minus 1
-XCNUM           := $BE53        ; Command number (ext cmd = 0).
-
-PBITS           := $BE54        ; Command parameter bits
-FBITS           := $BE56        ; Found parameter bits
-
-.enum PBitsFlags
-        ;; PBITS
-        PFIX    = $80           ; Prefix needs fetching
-        SLOT    = $40           ; No parameters to be processed
-        RRUN    = $20           ; Command only valid during program
-        FNOPT   = $10           ; Filename is optional
-        CRFLG   = $08           ; CREATE allowed
-        T       = $04           ; File type
-        FN2     = $02           ; Filename '2' for RENAME
-        FN1     = $01           ; Filename expected
-
-        ;; PBITS+1
-        AD      = $80           ; Address
-        B       = $40           ; Byte
-        E       = $20           ; End address
-        L       = $10           ; Length
-        LINE    = $08           ; '@' line number
-        SD      = $04           ; Slot and drive numbers
-        F       = $02           ; Field
-        R       = $01           ; Record
-
-        ;; Setting SD in PBITS+1 enables desired automatic behavior: if
-        ;; a relative path is given, an appropriate prefix is computed,
-        ;; using S# and D# options if supplied. Without this, absolute
-        ;; paths must be used if no prefix is set.
-.endenum
-
-VADDR           := $BE58        ; Address parameter
-VSLOT           := $BE61        ; Slot parameter
-VTYPE           := $BE6A        ; Type parameter
-VPATH1          := $BE6C        ; Pathname buffer
-
-GOSYSTEM        := $BE70        ; Use instead of MLI
-
-SSGINFO         := $BEB4        ; Get/Set Info Parameter block
-FIFILID         := $BEB8        ; (set size to set=7 or get=$A)
-FIAUXID         := $BEB9
-FIMDATE         := $BEBE
-GETBUFR         := $BEF5
 ;;; ============================================================
 
         ;; Save previous external command address
@@ -107,9 +37,11 @@ GETBUFR         := $BEF5
 :
         ;; A = MSB of new page - update absolute addresses
         ;; (aligned to page boundary so only MSB changes)
-        sta     page_num1
-        sta     page_num2
-        sta     page_num3
+        ldx     relocation_table
+:       ldy     relocation_table+1,x
+        sta     handler,y
+        dex
+        bpl     :-
 
         ;; Install new address in external command address
         sta     EXTRNCMD+2
@@ -150,7 +82,7 @@ nxtchr: lda     INBUF,x
 
         page_num1 := *+2         ; address needing updating
 :       cmp     command_string,x
-        bne     not_ours
+        bne     not_path
         inx
         cpx     #command_length
         bne     nxtchr
@@ -170,12 +102,12 @@ nxtchr: lda     INBUF,x
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (Name, Type, Address)
+        ;; Set accepted parameter flags (Name, Slot/Drive)
 
-        lda     #PBitsFlags::T | PBitsFlags::FN1 ; Filename and Type
+        lda     #PBitsFlags::FN1 ; Filename
         sta     PBITS
 
-        lda     #PBitsFlags::AD | PBitsFlags::SD ; Address, Slot & Drive handling
+        lda     #PBitsFlags::SD ; Slot & Drive handling
         sta     PBITS+1
 
         clc                     ; Success (so far)
@@ -183,6 +115,10 @@ nxtchr: lda     INBUF,x
 
 ;;; ============================================================
 
+not_path:
+
+
+;;; ============================================================
 not_ours:
         sec                     ; Signal failure...
         next_command := *+1
@@ -195,89 +131,43 @@ execute:
 
         lda     FBITS
         and     #PBitsFlags::FN1 ; Filename?
-        bne     :+
-        lda     #$10            ; SYNTAX ERROR
-        sec
-rts1:   rts
-:
+        bne     set_path
 
 ;;; --------------------------------------------------
+        ;; Show current path
 
-        ;; Get the existing file info
-        lda     #$A
-        sta     SSGINFO
-        lda     #GET_FILE_INFO
-        jsr     GOSYSTEM
-        bcs     rts1
-
-;;; --------------------------------------------------
-
-        ;; Apply options
-        ldy     #0              ; count number of options
-
-        ;; Apply optional Type argument as new file type
-        lda     FBITS
-        and     #PBitsFlags::T  ; Type set?
-        beq     :+
-        iny
-        lda     VTYPE
-        sta     FIFILID
-:
-
-        ;; Apply optional Address argument as new aux type
-        lda     FBITS+1
-        and     #PBitsFlags::AD ; Address set?
-        beq     :+
-        iny
-        lda     VADDR
-        sta     FIAUXID
-        lda     VADDR+1
-        sta     FIAUXID+1
-:
-
-        ;; If no options were used, show current details instead.
-        cpy     #0
-        beq     show
-
-        ;; Apply current date/time
-        ldx     #3
-:       lda     DATE,x
-        sta     FIMDATE,x
-        dex
+        ldx     #0
+        page_num3 := *+2
+:       cpx     path_buffer
+        beq     done
+        page_num4 := *+2
+        lda     path_buffer+1,x
+        ora     #$80
+        jsr     COUT
+        inx
         bpl     :-
 
-        ;; Set new file info
-        lda     #$7
-        sta     SSGINFO
-
-        lda     #SET_FILE_INFO
-        jmp     GOSYSTEM
+        jsr     CROUT
+done:   clc
+        rts
 
 ;;; --------------------------------------------------
+        ;; Set path
+set_path:
+        ptr := $06
+        lda     VPATH1
+        sta     ptr
+        ldx     VPATH1+1
+        sta     ptr+1
 
-show:
-        lda     #'T'|$80
-        jsr     COUT
-        lda     #'='|$80
-        jsr     COUT
-        lda     #'$'|$80
-        jsr     COUT
-        lda     VTYPE
-        jsr     PRBYTE
-        jsr     CROUT
-
-        lda     #'A'|$80
-        jsr     COUT
-        lda     #'='|$80
-        jsr     COUT
-        lda     #'$'|$80
-        jsr     COUT
-        lda     VADDR+1
-        jsr     PRBYTE
-        lda     VADDR
-        jsr     PRBYTE
-        jsr     CROUT
-
+        ldy     #0
+        lda     (ptr),y
+        tay
+:       lda     (ptr),y
+        page_num5 := *+2
+        sta     path_buffer,y
+        dey
+        bpl     :-
         clc
         rts
 
@@ -285,11 +175,20 @@ show:
 ;;; Data
 
 command_string:
-        .byte   "CHTYPE"        ; Command string
+        .byte   "PATH"        ; Command string
         command_length  =  *-command_string
+
+path_buffer:
+        .res    65, 0
 
 .endproc
         .assert .sizeof(handler) <= $100, error, "Must fit on one page"
-        page_num1 := handler::page_num1
-        page_num2 := handler::page_num2
         next_command := handler::next_command
+
+relocation_table:
+        .byte   5
+        .byte   <handler::page_num1
+        .byte   <handler::page_num2
+        .byte   <handler::page_num3
+        .byte   <handler::page_num4
+        .byte   <handler::page_num5
