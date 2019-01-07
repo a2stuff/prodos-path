@@ -16,6 +16,9 @@
 
 INBUF           := $200         ; GETLN input buffer
 
+cmd_load_addr := $4000
+max_cmd_size   = $2000
+
 ;;; ============================================================
 ;;; Monitor ROM routines
 
@@ -35,6 +38,9 @@ CASE_MASK = $DF
 ;;; ============================================================
 ;;; Install the new command
 
+.proc installer
+        ptr := $06
+
         ;; TODO: Fail if Applesoft is not in ROM
 
         ;; Save previous external command address
@@ -43,8 +49,9 @@ CASE_MASK = $DF
         lda     EXTRNCMD+2
         sta     next_command+1
 
-        ;; Request a 2-page buffer
-        lda     #2
+        ;; Request a 4-page buffer - two pages for handler,
+        ;; two pages for I/O buffer.
+        lda     #4
         jsr     GETBUFR
         bcc     :+
         lda     #$C             ; NO BUFFERS AVAILABLE
@@ -58,14 +65,22 @@ CASE_MASK = $DF
         sta     page_delta
 
         ;; Relocatable routine is aligned to page boundary so only MSB changes
-        ldx     relocation_table
-:       ldy     relocation_table+1,x
-        lda     handler,y
+        ldx     #0
+:       txa
+        asl
+        tay
+        lda     relocation_table+1,y
+        sta     ptr
+        lda     relocation_table+2,y
+        sta     ptr+1
+
+        lda     (ptr),y
         clc
         adc     page_delta
-        sta     handler,y
-        dex
-        bpl     :-
+        sta     (ptr),y
+        inx
+        cpx     relocation_table
+        bne     :-
 
         ;; Relocate
         lda     #<handler
@@ -93,6 +108,7 @@ CASE_MASK = $DF
 
         ;; Complete
         rts
+.endproc
 
 ;;; ============================================================
 ;;; Command Handler
@@ -149,6 +165,10 @@ nxtchr: lda     INBUF,x
 ;;; ============================================================
 
 check_if_token:
+        ;; Is a PATH set?
+        lda     path_buffer
+        beq     not_ours
+
         ;; Ensure it's alpha
         lda     INBUF
         page_num7 := *+2         ; address needing updating
@@ -204,16 +224,142 @@ next_token:
         bcc     @loop           ; High bit clear, keep looking
         lda     (ptr),y         ; End of table?
         bne     next_char       ; Nope, check for a match
-
-        ;; Not a keyword, so invoke
-
-not_a_token:
-        ;; TODO: Implement me!
+        beq     maybe_invoke
 
 not_ours:
         sec                     ; Signal failure...
         next_command := *+1
         jmp     $ffff           ; Execute next command in chain
+
+
+.proc get_file_info_params
+param_count:    .byte   $A
+pathname:       .addr   command_path_buffer
+access:         .byte   0
+file_type:      .byte   0
+aux_type:       .word   0
+storage_type:   .byte   0
+blocks_used:    .byte   0
+mod_date:       .word   0
+mod_time:       .word   0
+create_date:    .word   0
+create_time:    .word   0
+.endproc
+        page_num9 := get_file_info_params::pathname+1
+
+.proc open_params
+param_count:    .byte   3
+pathname:       .addr   command_path_buffer
+io_buffer:      .addr   handler + $200
+ref_num:        .byte   0
+.endproc
+        page_num10 := open_params::pathname+1
+        page_num11 := open_params::io_buffer+1
+
+.proc read_params
+param_count:    .byte   4
+ref_num:        .byte   0
+data_buffer:    .addr   cmd_load_addr
+request_count:  .word   max_cmd_size
+trans_count:    .word   0
+.endproc
+
+.proc close_params
+param_count:    .byte   1
+ref_num:        .byte   0
+.endproc
+
+maybe_invoke:
+        ;; Compose path
+        ldx     #0
+:       lda     path_buffer+1,x ; TODO: absolute refs
+        sta     command_path_buffer+1,x ; TODO: absolute refs
+        inx
+        cpx     path_buffer
+        bne     :-
+
+        lda     #'/'
+        sta     command_path_buffer+1,x
+        inx
+
+        ldy     #0
+:       lda     INBUF,y
+        cmp     #'.'|$80
+        beq     @ok
+        cmp     #'0'
+        bcc     @notok
+        cmp     #'9'+1
+        bcc     @ok
+        cmp     #'A'
+        bcc     @notok
+        cmp     #'Z'+1
+        bcc     @ok
+        cmp     #'a'
+        bcc     @notok
+        cmp     #'z'+1
+        bcs     @notok
+
+@ok:    sta     command_path_buffer+1,x
+        inx
+        iny
+        bne     :-
+
+@notok: stx     command_path_buffer
+
+        jsr     MLI
+        .byte   GET_FILE_INFO
+        .addr   get_file_info_params
+        beq     :+
+        sec                     ; no such file - signal it's not us
+        rts
+
+:       lda     get_file_info_params::file_type
+        cmp     #$F0            ; CMD
+        beq     :+
+        sec                     ; wrong type - ignore it
+        rts
+
+        ;; Tell BASIC.SYSTEM it was handled.
+:       lda     #0
+        sta     XCNUM
+        sta     PBITS
+        sta     PBITS+1
+        lda     #$FF            ; TODO: Signal how much of input was consumed (all?)
+        sta     XLEN
+        lda     #<XRETURN
+        sta     XTRNADDR
+        lda     #>XRETURN
+        sta     XTRNADDR+1
+
+        ;; Now try to open/read/close and invoke it
+        jsr     MLI
+        .byte   OPEN
+        .addr   open_params
+        beq     :+
+        lda     #8              ; I/O ERROR - TODO: is this used???
+        sec
+        rts
+
+:       lda     open_params::ref_num
+        sta     read_params::ref_num
+        sta     close_params::ref_num
+        jsr     MLI
+        .byte   READ
+        .addr   read_params
+        beq     :+
+        lda     #8              ; I/O ERROR - TODO: is this used???
+        sec
+        rts
+
+:       jsr     MLI
+        .byte   CLOSE
+        .addr   close_params
+
+        ;; Invoke command
+        jsr     cmd_load_addr
+
+        clc                     ; Success
+        rts                     ; Return to BASIC.SYSTEM
 
 
 ;;; ============================================================
@@ -283,6 +429,9 @@ command_string:
 path_buffer:
         .res    65, 0
 
+command_path_buffer:
+        .res    65, 0
+
 .endproc
         .assert .sizeof(handler) <= $200, error, "Must fit on two pages"
         handler_end := *-1
@@ -295,11 +444,14 @@ page_delta:
 
 relocation_table:
         .byte   5
-        .byte   <handler::page_num1
-        .byte   <handler::page_num2
-        .byte   <handler::page_num3
-        .byte   <handler::page_num4
-        .byte   <handler::page_num5
-        .byte   <handler::page_num6
-        .byte   <handler::page_num7
-        .byte   <handler::page_num8
+        .addr   handler::page_num1
+        .addr   handler::page_num2
+        .addr   handler::page_num3
+        .addr   handler::page_num4
+        .addr   handler::page_num5
+        .addr   handler::page_num6
+        .addr   handler::page_num7
+        .addr   handler::page_num8
+        .addr   handler::page_num9
+        .addr   handler::page_num10
+        .addr   handler::page_num11

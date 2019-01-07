@@ -1,7 +1,12 @@
 ;;; ============================================================
 ;;; ProDOS MLI / Global Page
 
+MLI             := $BF00
+
 GET_FILE_INFO   = $C4
+OPEN            = $C8
+READ            = $CA
+CLOSE           = $CC
 
 ;;; ============================================================
 ;;; BASIC.SYSTEM Global Page
@@ -46,6 +51,8 @@ FBITS           := $BE56        ; Found parameter bits
 VPATH1          := $BE6C        ; Pathname buffer
 
 GOSYSTEM        := $BE70        ; Use instead of MLI
+
+XRETURN         := $BE9E        ; Handy RTS
 
 SSGINFO         := $BEB4        ; Get Info Parameter block
 FIFILID         := $BEB8        ; (set size $A)
