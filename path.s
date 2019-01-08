@@ -180,6 +180,8 @@ check_if_token:
         lda     path_buffer
         beq     not_ours
 
+        ;; TODO: skip leading spaces
+
         ;; Ensure it's alpha
         lda     INBUF
         page_num7 := *+2         ; address needing updating
@@ -225,14 +227,12 @@ next_char:
         ;; Otherwise, advance to next token
 next_token:
         ldx     #0              ; Start next match at start of input line
-        ;; TODO: skip leading spaces
-
-@loop:  lda     (ptr),y         ; Scan table looking for a high bit set
+sloop:  lda     (ptr),y         ; Scan table looking for a high bit set
         iny
         bne     :+
         inc     ptr+1
 :       asl
-        bcc     @loop           ; High bit clear, keep looking
+        bcc     sloop           ; High bit clear, keep looking
         lda     (ptr),y         ; End of table?
         bne     next_char       ; Nope, check for a match
         beq     maybe_invoke
