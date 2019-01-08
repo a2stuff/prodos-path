@@ -16,7 +16,7 @@
 ;;;
 ;;; Installed command memory structure:
 ;;; * 2 pages - code, path buffer
-;;; * 2 pages - I/O buffer
+;;; * 4 pages - I/O buffer
 
 ;;; TODO:
 ;;;  * Dynamically allocate I/O buffer
@@ -58,9 +58,9 @@ CASE_MASK = $DF
         lda     EXTRNCMD+2
         sta     next_command+1
 
-        ;; Request a 4-page buffer - two pages for handler,
-        ;; two pages for I/O buffer.
-        lda     #4
+        ;; Request a 6-page buffer - 2 pages for handler,
+        ;; 4 pages for I/O buffer.
+        lda     #6
         jsr     GETBUFR
         bcc     :+
         lda     #$C             ; NO BUFFERS AVAILABLE
@@ -68,9 +68,8 @@ CASE_MASK = $DF
 :       sta     new_page        ; A = MSB of new page
 
         ;; Compute move delta in pages
-        lda     #>handler
         sec
-        sbc     new_page
+        sbc     #>handler
         sta     page_delta
 
         ;; Relocatable routine is aligned to page boundary so only MSB changes
@@ -83,10 +82,10 @@ CASE_MASK = $DF
         lda     relocation_table+2,y
         sta     ptr+1
 
-        lda     (ptr),y
+        lda     (ptr)
         clc
         adc     page_delta
-        sta     (ptr),y
+        sta     (ptr)
         inx
         cpx     relocation_table
         bne     :-
@@ -162,7 +161,7 @@ nxtchr: lda     INBUF,x
 
         ;; Set accepted parameter flags (Name, Slot/Drive)
 
-        lda     #PBitsFlags::FN1 ; Filename
+        lda     #PBitsFlags::FNOPT | PBitsFlags::FN1 ; Filename (optional)
         sta     PBITS
 
         lda     #PBitsFlags::SD ; Slot & Drive handling
@@ -175,6 +174,7 @@ nxtchr: lda     INBUF,x
 
 check_if_token:
         ;; Is a PATH set?
+        page_num18 := *+2         ; address needing updating
         lda     path_buffer
         beq     not_ours
 
@@ -248,7 +248,7 @@ access:         .byte   0
 file_type:      .byte   0
 aux_type:       .word   0
 storage_type:   .byte   0
-blocks_used:    .byte   0
+blocks_used:    .word   0
 mod_date:       .word   0
 mod_time:       .word   0
 create_date:    .word   0
@@ -281,47 +281,56 @@ ref_num:        .byte   0
 maybe_invoke:
         ;; Compose path
         ldx     #0
-:       lda     path_buffer+1,x ; TODO: absolute refs
-        sta     command_path_buffer+1,x ; TODO: absolute refs
+        page_num12 := *+2         ; address needing updating
+:       lda     path_buffer+1,x
+        page_num13 := *+2         ; address needing updating
+        sta     command_path_buffer+1,x
         inx
+        page_num14 := *+2         ; address needing updating
         cpx     path_buffer
         bne     :-
 
         lda     #'/'
+        page_num15 := *+2         ; address needing updating
         sta     command_path_buffer+1,x
         inx
 
         ldy     #0
 :       lda     INBUF,y
-        cmp     #'.'|$80
-        beq     @ok
+        and     #$7F
+        cmp     #'.'
+        beq     ok
         cmp     #'0'
-        bcc     @notok
+        bcc     notok
         cmp     #'9'+1
-        bcc     @ok
+        bcc     ok
         cmp     #'A'
-        bcc     @notok
+        bcc     notok
         cmp     #'Z'+1
-        bcc     @ok
+        bcc     ok
         cmp     #'a'
-        bcc     @notok
+        bcc     notok
         cmp     #'z'+1
-        bcs     @notok
+        bcs     notok
 
-@ok:    sta     command_path_buffer+1,x
+        page_num16 := *+2         ; address needing updating
+ok:     sta     command_path_buffer+1,x
         inx
         iny
         bne     :-
 
-@notok: stx     command_path_buffer
+        page_num17 := *+2         ; address needing updating
+notok:  stx     command_path_buffer
 
         jsr     MLI
         .byte   GET_FILE_INFO
+        page_num19 := *+1
         .addr   get_file_info_params
         beq     :+
         sec                     ; no such file - signal it's not us
         rts
 
+        page_num23 := *+2
 :       lda     get_file_info_params::file_type
         cmp     #$F0            ; CMD
         beq     :+
@@ -343,17 +352,22 @@ maybe_invoke:
         ;; Now try to open/read/close and invoke it
         jsr     MLI
         .byte   OPEN
+        page_num20 := *+1
         .addr   open_params
         beq     :+
         lda     #8              ; I/O ERROR - TODO: is this used???
         sec
         rts
 
+        page_num24 := *+2
 :       lda     open_params::ref_num
+        page_num25 := *+2
         sta     read_params::ref_num
+        page_num26 := *+2
         sta     close_params::ref_num
         jsr     MLI
         .byte   READ
+        page_num21 := *+1
         .addr   read_params
         beq     :+
         lda     #8              ; I/O ERROR - TODO: is this used???
@@ -362,6 +376,7 @@ maybe_invoke:
 
 :       jsr     MLI
         .byte   CLOSE
+        page_num22 := *+1
         .addr   close_params
 
         ;; Invoke command
@@ -404,7 +419,7 @@ done:   clc
 set_path:
         lda     VPATH1
         sta     ptr
-        ldx     VPATH1+1
+        lda     VPATH1+1
         sta     ptr+1
 
         ldy     #0
@@ -452,7 +467,7 @@ page_delta:
         .byte   0
 
 relocation_table:
-        .byte   5
+        .byte   (table_end - *) / 2
         .addr   handler::page_num1
         .addr   handler::page_num2
         .addr   handler::page_num3
@@ -464,3 +479,19 @@ relocation_table:
         .addr   handler::page_num9
         .addr   handler::page_num10
         .addr   handler::page_num11
+        .addr   handler::page_num12
+        .addr   handler::page_num13
+        .addr   handler::page_num14
+        .addr   handler::page_num15
+        .addr   handler::page_num16
+        .addr   handler::page_num17
+        .addr   handler::page_num18
+        .addr   handler::page_num19
+        .addr   handler::page_num20
+        .addr   handler::page_num21
+        .addr   handler::page_num22
+        .addr   handler::page_num23
+        .addr   handler::page_num24
+        .addr   handler::page_num25
+        .addr   handler::page_num26
+        table_end := *
