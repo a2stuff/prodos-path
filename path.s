@@ -322,7 +322,7 @@ ok:     sta     cmd_path_buffer+1,x
         inx
         cpx     #65             ; Maximum path length+1
         bcc     :-
-        bcs     fail
+        bcs     fail_gfi
 
 notok:  stx     cmd_path_buffer
 
@@ -331,14 +331,15 @@ notok:  stx     cmd_path_buffer
         MLI_CALL GET_FILE_INFO, get_file_info_params
         beq     :+
 
-fail:   sec                     ; no such file - signal it's not us
+fail_gfi:
+        sec                     ; no such file - signal it's not us
         rts
 
         ;; Check to see if type is CMD.
         page_num23 := *+2
 :       lda     get_file_info_params::file_type
         cmp     #$F0            ; CMD
-        bne     fail            ; wrong type - ignore it
+        bne     fail_gfi        ; wrong type - ignore it
 
         ;; Tell BASIC.SYSTEM it was handled.
         lda     #0
@@ -364,14 +365,10 @@ fail:   sec                     ; no such file - signal it's not us
         ;; Now try to open/read/close and invoke it
         page_num20 := *+5
         MLI_CALL OPEN, open_params
-        beq     :+
-        jsr     FREEBUFR
-        lda     #8              ; I/O ERROR - TODO: is this used???
-        sec
-        rts
+        bne     fail_load
 
         page_num24 := *+2
-:       lda     open_params::ref_num
+        lda     open_params::ref_num
         page_num25 := *+2
         sta     read_params::ref_num
         page_num26 := *+2
@@ -379,16 +376,10 @@ fail:   sec                     ; no such file - signal it's not us
 
         page_num21 := *+5
         MLI_CALL READ, read_params
-        beq     :+
-        jsr     FREEBUFR
-        lda     #8              ; I/O ERROR - TODO: is this used???
-        sec
-        rts
+        bne     fail_load
 
-:       jsr     MLI
-        .byte   CLOSE
-        page_num22 := *+1
-        .addr   close_params
+        page_num22 := *+5
+        MLI_CALL CLOSE, close_params
         jsr     FREEBUFR
 
         ;; Invoke command
@@ -396,6 +387,12 @@ fail:   sec                     ; no such file - signal it's not us
 
         clc                     ; Success
         rts                     ; Return to BASIC.SYSTEM
+
+fail_load:
+        jsr     FREEBUFR
+        lda     #8              ; I/O ERROR - TODO: is this used???
+        sec
+        rts
 
 ;;; ============================================================
 ;;; ============================================================
