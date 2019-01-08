@@ -14,11 +14,9 @@
 ;;; ============================================================
 ;;;
 ;;; Installed command memory structure:
-;;; * 2 pages - code, path buffer
-;;; * 4 pages - I/O buffer
+;;; * 3 pages - code, path buffers
 
 ;;; TODO:
-;;;  * Dynamically allocate I/O buffer
 ;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin
 ;;;  * Fail install if on an Integer BASIC machine
 ;;;  * Skip leading spaces
@@ -57,16 +55,23 @@ CASE_MASK = $DF
         lda     EXTRNCMD+2
         sta     next_command+1
 
-        ;; Request a 6-page buffer - 2 pages for handler,
-        ;; 4 pages for I/O buffer.
-        lda     #6
+        ;; Request a buffer for handler.
+        lda     #handler_pages
         jsr     GETBUFR
         bcc     :+
         lda     #$C             ; NO BUFFERS AVAILABLE
         rts
 :       sta     new_page        ; A = MSB of new page
 
+        ;; Reserve buffer permanently.
+        ;; ProDOS Technical Note #9: Buffer Management Using BASIC.SYSTEM
+        lda     RSHIMEM
+        sec
+        sbc     #handler_pages
+        sta     RSHIMEM
+
         ;; Compute move delta in pages
+        lda     new_page
         sec
         sbc     #>handler
         sta     page_delta
@@ -348,12 +353,22 @@ notok:  stx     command_path_buffer
         lda     #>XRETURN
         sta     XTRNADDR+1
 
+        ;; Reserve buffer for I/O
+        lda     #4
+        jsr     GETBUFR
+        bcc     :+
+        lda     #$C             ; NO BUFFERS AVAILABLE
+        rts
+        page_num27 := *+2
+:       sta     open_params::io_buffer+1
+
         ;; Now try to open/read/close and invoke it
         jsr     MLI
         .byte   OPEN
         page_num20 := *+1
         .addr   open_params
         beq     :+
+        jsr     FREEBUFR
         lda     #8              ; I/O ERROR - TODO: is this used???
         sec
         rts
@@ -369,6 +384,7 @@ notok:  stx     command_path_buffer
         page_num21 := *+1
         .addr   read_params
         beq     :+
+        jsr     FREEBUFR
         lda     #8              ; I/O ERROR - TODO: is this used???
         sec
         rts
@@ -377,13 +393,13 @@ notok:  stx     command_path_buffer
         .byte   CLOSE
         page_num22 := *+1
         .addr   close_params
+        jsr     FREEBUFR
 
         ;; Invoke command
         jsr     cmd_load_addr
 
         clc                     ; Success
         rts                     ; Return to BASIC.SYSTEM
-
 
 ;;; ============================================================
 ;;; ============================================================
@@ -457,8 +473,8 @@ command_path_buffer:
         .res    65, 0
 
 .endproc
-        .assert .sizeof(handler) <= $200, error, "Must fit on two pages"
         handler_end := *-1
+        handler_pages = (.sizeof(handler) + $FF) / $100
         next_command := handler::next_command
 
 new_page:
@@ -494,4 +510,5 @@ relocation_table:
         .addr   handler::page_num24
         .addr   handler::page_num25
         .addr   handler::page_num26
+        .addr   handler::page_num27
         table_end := *

@@ -58,3 +58,5 @@ SSGINFO         := $BEB4        ; Get Info Parameter block
 FIFILID         := $BEB8        ; (set size $A)
 
 GETBUFR         := $BEF5
+FREEBUFR        := $BEF8
+RSHIMEM         := $BEFB
