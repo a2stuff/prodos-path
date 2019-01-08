@@ -13,14 +13,26 @@
         .include "prodos.inc"
 
 ;;; ============================================================
+;;;
+;;; Installed command memory structure:
+;;; * 2 pages - code, path buffer
+;;; * 2 pages - I/O buffer
 
-INBUF           := $200         ; GETLN input buffer
+;;; TODO:
+;;;  * Dynamically allocate I/O buffer
+;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin
+;;;  * Fail install if on an Integer BASIC machine
+;;;  * Skip leading spaces
+
+;;; ============================================================
 
 cmd_load_addr := $4000
 max_cmd_size   = $2000
 
 ;;; ============================================================
-;;; Monitor ROM routines
+;;; Monitor ROM routines/locations
+
+INBUF           := $200         ; GETLN input buffer
 
 CROUT   := $FD8E
 COUT    := $FDED
@@ -29,7 +41,6 @@ MOVE    := $FE2C                ; call with Y=0
 MOVE_SRC   := $3C
 MOVE_END   := $3E
 MOVE_DST   := $42
-
 
 TOKEN_NAME_TABLE := $D0D0
 
@@ -40,8 +51,6 @@ CASE_MASK = $DF
 
 .proc installer
         ptr := $06
-
-        ;; TODO: Fail if Applesoft is not in ROM
 
         ;; Save previous external command address
         lda     EXTRNCMD+1
