@@ -327,10 +327,8 @@ ok:     sta     cmd_path_buffer+1,x
 notok:  stx     cmd_path_buffer
 
         ;; Check to see if path exists.
-        jsr     MLI
-        .byte   GET_FILE_INFO
-        page_num19 := *+1
-        .addr   get_file_info_params
+        page_num19 := *+5
+        MLI_CALL GET_FILE_INFO, get_file_info_params
         beq     :+
 
 fail:   sec                     ; no such file - signal it's not us
@@ -364,10 +362,8 @@ fail:   sec                     ; no such file - signal it's not us
 :       sta     open_params::io_buffer+1
 
         ;; Now try to open/read/close and invoke it
-        jsr     MLI
-        .byte   OPEN
-        page_num20 := *+1
-        .addr   open_params
+        page_num20 := *+5
+        MLI_CALL OPEN, open_params
         beq     :+
         jsr     FREEBUFR
         lda     #8              ; I/O ERROR - TODO: is this used???
@@ -380,10 +376,9 @@ fail:   sec                     ; no such file - signal it's not us
         sta     read_params::ref_num
         page_num26 := *+2
         sta     close_params::ref_num
-        jsr     MLI
-        .byte   READ
-        page_num21 := *+1
-        .addr   read_params
+
+        page_num21 := *+5
+        MLI_CALL READ, read_params
         beq     :+
         jsr     FREEBUFR
         lda     #8              ; I/O ERROR - TODO: is this used???
