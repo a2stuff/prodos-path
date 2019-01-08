@@ -163,12 +163,10 @@ nxtchr: lda     INBUF,x
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (Name, Slot/Drive)
-
-        lda     #PBitsFlags::FNOPT | PBitsFlags::FN1 ; Filename (optional)
+        ;; Set accepted parameter flags (optional name)
+        lda     #PBitsFlags::FNOPT | PBitsFlags::FN1
         sta     PBITS
-
-        lda     #PBitsFlags::SD ; Slot & Drive handling
+        lda     #0
         sta     PBITS+1
 
         clc                     ; Success (so far)
