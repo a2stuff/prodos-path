@@ -245,9 +245,14 @@ not_ours:
         jmp     $ffff           ; Execute next command in chain
 
 
+;;; ============================================================
+
+        cmd_path_buffer := $280
+
+
 .proc get_file_info_params
 param_count:    .byte   $A
-pathname:       .addr   command_path_buffer
+pathname:       .addr   cmd_path_buffer
 access:         .byte   0
 file_type:      .byte   0
 aux_type:       .word   0
@@ -258,16 +263,13 @@ mod_time:       .word   0
 create_date:    .word   0
 create_time:    .word   0
 .endproc
-        page_num9 := get_file_info_params::pathname+1
 
 .proc open_params
 param_count:    .byte   3
-pathname:       .addr   command_path_buffer
-io_buffer:      .addr   handler + $200
+pathname:       .addr   cmd_path_buffer
+io_buffer:      .addr   0
 ref_num:        .byte   0
 .endproc
-        page_num10 := open_params::pathname+1
-        page_num11 := open_params::io_buffer+1
 
 .proc read_params
 param_count:    .byte   4
@@ -287,16 +289,14 @@ maybe_invoke:
         ldx     #0
         page_num12 := *+2         ; address needing updating
 :       lda     path_buffer+1,x
-        page_num13 := *+2         ; address needing updating
-        sta     command_path_buffer+1,x
+        sta     cmd_path_buffer+1,x
         inx
         page_num14 := *+2         ; address needing updating
         cpx     path_buffer
         bne     :-
 
         lda     #'/'
-        page_num15 := *+2         ; address needing updating
-        sta     command_path_buffer+1,x
+        sta     cmd_path_buffer+1,x
         inx
 
         ldy     #0
@@ -317,32 +317,33 @@ maybe_invoke:
         cmp     #'z'+1
         bcs     notok
 
-        page_num16 := *+2         ; address needing updating
-ok:     sta     command_path_buffer+1,x
-        inx
+ok:     sta     cmd_path_buffer+1,x
         iny
-        bne     :-
+        inx
+        cpx     #65             ; Maximum path length+1
+        bcc     :-
+        bcs     fail
 
-        page_num17 := *+2         ; address needing updating
-notok:  stx     command_path_buffer
+notok:  stx     cmd_path_buffer
 
+        ;; Check to see if path exists.
         jsr     MLI
         .byte   GET_FILE_INFO
         page_num19 := *+1
         .addr   get_file_info_params
         beq     :+
-        sec                     ; no such file - signal it's not us
+
+fail:   sec                     ; no such file - signal it's not us
         rts
 
+        ;; Check to see if type is CMD.
         page_num23 := *+2
 :       lda     get_file_info_params::file_type
         cmp     #$F0            ; CMD
-        beq     :+
-        sec                     ; wrong type - ignore it
-        rts
+        bne     fail            ; wrong type - ignore it
 
         ;; Tell BASIC.SYSTEM it was handled.
-:       lda     #0
+        lda     #0
         sta     XCNUM
         sta     PBITS
         sta     PBITS+1
@@ -469,9 +470,6 @@ command_string:
 path_buffer:
         .res    65, 0
 
-command_path_buffer:
-        .res    65, 0
-
 .endproc
         handler_end := *-1
         handler_pages = (.sizeof(handler) + $FF) / $100
@@ -492,15 +490,8 @@ relocation_table:
         .addr   handler::page_num6
         .addr   handler::page_num7
         .addr   handler::page_num8
-        .addr   handler::page_num9
-        .addr   handler::page_num10
-        .addr   handler::page_num11
         .addr   handler::page_num12
-        .addr   handler::page_num13
         .addr   handler::page_num14
-        .addr   handler::page_num15
-        .addr   handler::page_num16
-        .addr   handler::page_num17
         .addr   handler::page_num18
         .addr   handler::page_num19
         .addr   handler::page_num20

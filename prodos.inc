@@ -8,6 +8,12 @@ OPEN            = $C8
 READ            = $CA
 CLOSE           = $CC
 
+.macro MLI_CALL cmd, params
+        jsr     MLI
+        .byte   cmd
+        .addr   params
+.endmacro
+
 ;;; ============================================================
 ;;; BASIC.SYSTEM Global Page
 
