@@ -27,6 +27,9 @@ Example:
 ```
 
 Notes:
-* Allocates a 3 page buffer to store the code and path
+* Allocates a buffer to store the code and path
 * Can be invoked as lower case (e.g. `path ...`)
 * Applesoft BASIC commands are unaffected (but can't be CMD names)
+
+Future:
+* Support multi-segment paths (e.g. `/hd/cmds:/hd2/more.cmds`)

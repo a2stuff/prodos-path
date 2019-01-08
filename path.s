@@ -17,7 +17,7 @@
 ;;; * 3 pages - code, path buffers
 
 ;;; TODO:
-;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin
+;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin)
 ;;;  * Fail install if on an Integer BASIC machine
 ;;;  * Skip leading spaces
 

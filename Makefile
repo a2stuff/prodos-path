@@ -18,7 +18,7 @@ HEADERS = $(wildcard *.inc)
 clean:
 	rm -f $(OUTDIR)/*.o
 	rm -f $(OUTDIR)/*.list
-	rm -f $(OUTDIR)/$(TARGETS)
+	rm -f $(TARGETS)
 
 
 $(OUTDIR)/%.o: %.s $(HEADERS)
@@ -28,5 +28,5 @@ $(OUTDIR)/%.BIN $(OUTDIR)/%.SYS: $(OUTDIR)/%.o
 	$(CC65)/ld65 $(CCFLAGS) -o $@ $<
 	xattr -wx prodos.AuxType '00 20' $@
 
-$(OUTDIR)/%.CMD: $(OUTDIR)/%.o
+$(OUTDIR)/%.CMD: $(OUTDIR)/%.cmd.o
 	$(CC65)/ld65 $(CCFLAGS) -o $@ $<
