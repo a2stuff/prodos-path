@@ -9,7 +9,6 @@
         .org $2000
 
         .include "apple2.inc"
-        .include "apple2.mac"
         .include "prodos.inc"
 
 ;;; ============================================================
@@ -135,7 +134,7 @@ CASE_MASK = $DF
 
 nxtchr: lda     INBUF,x
         page_num6 := *+2         ; address needing updating
-        jsr     to_upper
+        jsr     to_upper_ascii
 
         page_num1 := *+2         ; address needing updating
         cmp     command_string,x
@@ -181,11 +180,11 @@ check_if_token:
         ;; Ensure it's alpha
         lda     INBUF
         page_num7 := *+2         ; address needing updating
-        jsr     to_upper
+        jsr     to_upper_ascii
 
-        cmp     #'A'|$80
+        cmp     #'A'
         bcc     not_ours
-        cmp     #('Z'+1)|$80
+        cmp     #'Z'+1
         bcs     not_ours
 
         ;; Check if it's a BASIC token. Based on the AppleSoft BASIC source.
@@ -210,7 +209,7 @@ mloop:  iny                     ; Advance through token table
 next_char:
         lda     INBUF,x         ; Next character
         page_num8 := *+2        ; address needing updating
-        jsr     to_upper
+        jsr     to_upper_ascii
 
         ;; NOTE: Does not skip over spaces, unlike BASIC tokenizer
 
@@ -436,8 +435,9 @@ set_path:
 ;;; ============================================================
 ;;; Helpers
 
-.proc to_upper
-        cmp     #'a'|$80
+.proc to_upper_ascii
+        and     #$7F
+        cmp     #'a'
         bcc     skip
         and     #CASE_MASK
 skip:   rts
@@ -447,7 +447,7 @@ skip:   rts
 ;;; Data
 
 command_string:
-        scrcode "PATH"
+        .byte "PATH"
         command_length  =  *-command_string
 
 path_buffer:
