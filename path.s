@@ -245,60 +245,30 @@ not_ours:
 
 ;;; ============================================================
 
-        cmd_path_buffer := $280
-
-
-.proc get_file_info_params
-param_count:    .byte   $A
-pathname:       .addr   cmd_path_buffer
-access:         .byte   0
-file_type:      .byte   0
-aux_type:       .word   0
-storage_type:   .byte   0
-blocks_used:    .word   0
-mod_date:       .word   0
-mod_time:       .word   0
-create_date:    .word   0
-create_time:    .word   0
-.endproc
-
-.proc open_params
-param_count:    .byte   3
-pathname:       .addr   cmd_path_buffer
-io_buffer:      .addr   0
-ref_num:        .byte   0
-.endproc
-
-.proc read_params
-param_count:    .byte   4
-ref_num:        .byte   0
-data_buffer:    .addr   cmd_load_addr
-request_count:  .word   max_cmd_size
-trans_count:    .word   0
-.endproc
-
-.proc close_params
-param_count:    .byte   1
-ref_num:        .byte   0
-.endproc
-
 maybe_invoke:
+        lda     VPATH1
+        sta     ptr
+        lda     VPATH1+1
+        sta     ptr+1
+
         ;; Compose path
         ldx     #0
+        ldy     #1
         page_num12 := *+2         ; address needing updating
 :       lda     path_buffer+1,x
-        sta     cmd_path_buffer+1,x
         inx
+        sta     (ptr),y
+        iny
         page_num14 := *+2         ; address needing updating
         cpx     path_buffer
         bne     :-
 
         lda     #'/'
-        sta     cmd_path_buffer+1,x
-        inx
+        sta     (ptr),y
+        iny
 
-        ldy     #0
-:       lda     INBUF,y
+        ldx     #0
+:       lda     INBUF,x
         and     #$7F
         cmp     #'.'
         beq     ok
@@ -315,18 +285,22 @@ maybe_invoke:
         cmp     #'z'+1
         bcs     notok
 
-ok:     sta     cmd_path_buffer+1,x
+ok:     sta     (ptr),y
         iny
         inx
         cpx     #65             ; Maximum path length+1
         bcc     :-
         bcs     fail_gfi
 
-notok:  stx     cmd_path_buffer
+notok:  dey
+        tya
+        ldy     #0
+        sta     (ptr),y
 
         ;; Check to see if path exists.
-        page_num19 := *+5
-        MLI_CALL GET_FILE_INFO, get_file_info_params
+        lda     #$A             ; param length
+        sta     SSGINFO
+        MLI_CALL GET_FILE_INFO, SSGINFO
         beq     :+
 
 fail_gfi:
@@ -334,8 +308,7 @@ fail_gfi:
         rts
 
         ;; Check to see if type is CMD.
-        page_num23 := *+2
-:       lda     get_file_info_params::file_type
+:       lda     FIFILID
         cmp     #$F0            ; CMD
         bne     fail_gfi        ; wrong type - ignore it
 
@@ -357,27 +330,33 @@ fail_gfi:
         bcc     :+
         lda     #$C             ; NO BUFFERS AVAILABLE
         rts
-        page_num27 := *+2
-:       sta     open_params::io_buffer+1
+:       sta     OSYSBUF+1
 
         ;; Now try to open/read/close and invoke it
-        page_num20 := *+5
-        MLI_CALL OPEN, open_params
+        MLI_CALL OPEN, SOPEN
         bne     fail_load
 
-        page_num24 := *+2
-        lda     open_params::ref_num
-        page_num25 := *+2
-        sta     read_params::ref_num
-        page_num26 := *+2
-        sta     close_params::ref_num
+        lda     OREFNUM
+        sta     RWREFNUM
+        sta     CFREFNUM
 
-        page_num21 := *+5
-        MLI_CALL READ, read_params
+
+        lda     #<cmd_load_addr
+        sta     RWDATA
+        lda     #>cmd_load_addr
+        sta     RWDATA+1
+        lda     #<max_cmd_size
+        sta     RWCOUNT
+        lda     #>max_cmd_size
+        sta     RWCOUNT+1
+
+
+        MLI_CALL READ, SREAD
         bne     fail_load
 
-        page_num22 := *+5
-        MLI_CALL CLOSE, close_params
+        ;; CLOSE call trashes INBUF ????
+
+        MLI_CALL CLOSE, SCLOSE
         jsr     FREEBUFR
 
         ;; Invoke command
@@ -483,13 +462,4 @@ relocation_table:
         .addr   handler::page_num12
         .addr   handler::page_num14
         .addr   handler::page_num18
-        .addr   handler::page_num19
-        .addr   handler::page_num20
-        .addr   handler::page_num21
-        .addr   handler::page_num22
-        .addr   handler::page_num23
-        .addr   handler::page_num24
-        .addr   handler::page_num25
-        .addr   handler::page_num26
-        .addr   handler::page_num27
         table_end := *

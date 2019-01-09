@@ -60,8 +60,20 @@ GOSYSTEM        := $BE70        ; Use instead of MLI
 
 XRETURN         := $BE9E        ; Handy RTS
 
-SSGINFO         := $BEB4        ; Get Info Parameter block
+SSGINFO         := $BEB4        ; GET_FILE_INFO Parameter block
 FIFILID         := $BEB8        ; (set size $A)
+
+SOPEN           := $BECB        ; OPEN
+OSYSBUF         := $BECE
+OREFNUM         := $BED0
+
+SREAD           := $BED5        ; READ
+RWREFNUM        := $BED6
+RWDATA          := $BED7
+RWCOUNT         := $BED9
+
+SCLOSE          := $BEDD        ; CLOSE
+CFREFNUM        := $BEDE
 
 GETBUFR         := $BEF5
 FREEBUFR        := $BEF8

@@ -5,7 +5,8 @@ CCFLAGS = --config apple2-asm.cfg
 
 OUTDIR = out
 
-TARGETS = $(OUTDIR)/path.BIN $(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD
+TARGETS = $(OUTDIR)/path.BIN \
+	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD
 
 .PHONY: clean all
 all: $(OUTDIR) $(TARGETS)
