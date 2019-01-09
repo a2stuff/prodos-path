@@ -7,4 +7,5 @@ BELL := $FBE4
 
         ldy     #0
         jsr     BELL
+        clc
         rts

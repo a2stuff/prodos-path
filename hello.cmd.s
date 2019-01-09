@@ -16,6 +16,7 @@ COUT    := $FDED
         jmp     :-
 
 done:   jsr     CROUT
+        clc
         rts
 
 str:    .byte   "Hello, world!", 0

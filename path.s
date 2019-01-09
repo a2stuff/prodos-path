@@ -340,7 +340,6 @@ fail_gfi:
         sta     RWREFNUM
         sta     CFREFNUM
 
-
         lda     #<cmd_load_addr
         sta     RWDATA
         lda     #>cmd_load_addr
@@ -354,15 +353,26 @@ fail_gfi:
         MLI_CALL READ, SREAD
         bne     fail_load
 
-        ;; CLOSE call trashes INBUF ????
+        ;; CLOSE call trashes lower bytes of INBUF, so stash it.
+        ldx     #$7F
+:       lda     INBUF,x
+        sta     INBUF+$80,x
+        dex
+        bpl     :-
 
         MLI_CALL CLOSE, SCLOSE
         jsr     FREEBUFR
 
+        ;; Restore it.
+        ldx     #$7F
+:       lda     INBUF+$80,x
+        sta     INBUF,x
+        dex
+        bpl     :-
+
         ;; Invoke command
         jsr     cmd_load_addr
 
-        clc                     ; Success
         rts                     ; Return to BASIC.SYSTEM
 
 fail_load:
