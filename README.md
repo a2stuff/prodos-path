@@ -1,4 +1,4 @@
-# path - CMD executable path command for ProDOS
+# path - CMD executable path command for ProDOS's BASIC.SYSTEM
 
 Build with [ca65](https://cc65.github.io/doc/ca65.html)
 
@@ -13,7 +13,7 @@ PATH prefix     - set search path
 ```
 
 Once set, binary files of type `CMD` in the specified directory can be invoked by name.
-* CMD file is loaded at $4000 and invoked; should return (`rts`) on completion
+* CMD file is loaded at $4000 and invoked; should return (`rts`) on with carry clear completion
 * The command line will be present at $200 (`GETLN` input buffer).
 
 Example:
