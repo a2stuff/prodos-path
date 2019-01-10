@@ -195,8 +195,8 @@ check_if_token:
         lda     #>(TOKEN_NAME_TABLE-$100)
         sta     ptr+1
 
-        ;; These start at "-1" and are immediately incremented
-        ldx     #$FF            ; X = position in input line
+        ;; These are immediately incremented
+        dex
         ldy     #$FF            ; (ptr),y offset TOKEN_NAME_TABLE
 
         ;; Match loop
@@ -266,8 +266,6 @@ maybe_invoke:
         jsr     skip_leading_spaces
         page_num16 := *+2         ; address needing updating
 :       jsr     to_upper_ascii
-        lda     INBUF,x
-        and     #$7F
         cmp     #'.'
         beq     ok
         cmp     #'0'
