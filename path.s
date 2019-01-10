@@ -18,8 +18,6 @@
 
 ;;; TODO:
 ;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin)
-;;;  * Fail install if on an Integer BASIC machine
-;;;  * Skip leading spaces
 
 ;;; ============================================================
 
@@ -137,9 +135,8 @@ CASE_MASK = $DF
         page_num9 := *+2         ; address needing updating
         jsr     skip_leading_spaces
 
-nxtchr: lda     INBUF,x
         page_num6 := *+2         ; address needing updating
-        jsr     to_upper_ascii
+nxtchr: jsr     to_upper_ascii
 
         page_num1 := *+2         ; address needing updating
         cmp     command_string,x
@@ -176,7 +173,7 @@ nxtchr: lda     INBUF,x
 
 check_if_token:
         ;; Is a PATH set?
-        page_num18 := *+2       ; address needing updating
+        page_num17 := *+2       ; address needing updating
         lda     path_buffer
         beq     not_ours
 
@@ -210,9 +207,8 @@ mloop:  iny                     ; Advance through token table
 
         ;; Check for match
 next_char:
-        lda     INBUF,x         ; Next character
         page_num8 := *+2        ; address needing updating
-        jsr     to_upper_ascii
+        jsr     to_upper_ascii  ; Next character
 
         ;; NOTE: Does not skip over spaces, unlike BASIC tokenizer
 
@@ -224,6 +220,7 @@ next_char:
 
         ;; Otherwise, advance to next token
 next_token:
+        page_num12 := *+2       ; address needing updating
         jsr     skip_leading_spaces
 sloop:  lda     (ptr),y         ; Scan table looking for a high bit set
         iny
@@ -252,7 +249,7 @@ maybe_invoke:
         ;; Compose path
         ldx     #0
         ldy     #1
-        page_num12 := *+2         ; address needing updating
+        page_num11 := *+2         ; address needing updating
 :       lda     path_buffer+1,x
         inx
         sta     (ptr),y
@@ -265,8 +262,11 @@ maybe_invoke:
         sta     (ptr),y
         iny
 
+        page_num15 := *+2         ; address needing updating
         jsr     skip_leading_spaces
-:       lda     INBUF,x
+        page_num16 := *+2         ; address needing updating
+:       jsr     to_upper_ascii
+        lda     INBUF,x
         and     #$7F
         cmp     #'.'
         beq     ok
@@ -277,10 +277,6 @@ maybe_invoke:
         cmp     #'A'
         bcc     notok
         cmp     #'Z'+1
-        bcc     ok
-        cmp     #'a'
-        bcc     notok
-        cmp     #'z'+1
         bcs     notok
 
 ok:     sta     (ptr),y
@@ -430,7 +426,11 @@ set_path:
 ;;; ============================================================
 ;;; Helpers
 
+;;; Returns INBUF,x with high bit stripped and up-cased
+;;; (also converts {|}~DEL to [\]^_ but that's okay)
+
 .proc to_upper_ascii
+        lda     INBUF,x
         and     #$7F
         cmp     #'a'
         bcc     skip
@@ -465,6 +465,9 @@ path_buffer:
         handler_pages = (.sizeof(handler) + $FF) / $100
         next_command := handler::next_command
 
+;;; ============================================================
+;;; Installation Data
+
 new_page:
         .byte   0
 page_delta:
@@ -480,7 +483,12 @@ relocation_table:
         .addr   handler::page_num6
         .addr   handler::page_num7
         .addr   handler::page_num8
+        .addr   handler::page_num9
+        .addr   handler::page_num10
+        .addr   handler::page_num11
         .addr   handler::page_num12
         .addr   handler::page_num14
-        .addr   handler::page_num18
+        .addr   handler::page_num15
+        .addr   handler::page_num16
+        .addr   handler::page_num17
         table_end := *
