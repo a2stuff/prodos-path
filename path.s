@@ -12,14 +12,6 @@
         .include "prodos.inc"
 
 ;;; ============================================================
-;;;
-;;; Installed command memory structure:
-;;; * 2 pages - code, path buffer
-
-;;; TODO:
-;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin)
-
-;;; ============================================================
 
 cmd_load_addr := $4000
 max_cmd_size   = $2000
@@ -277,22 +269,45 @@ not_ours:
 
 ;;; ============================================================
 
+fail_invoke:
+        sec
+        rts
+
+
 maybe_invoke:
+
+        ppos := $D6             ; position into path_buffer
+
+        lda     #0
+        sta     ppos
+
         ;; Compose path
+compose:
+        ldx     ppos
         reloc_point *+2
-        ldx     path_buffer
+        cpx     path_buffer
+        beq     fail_invoke
+
+        ;; Entry from path list
         ldy     #1
         reloc_point *+2
-:       lda     path_buffer,y
+:       lda     path_buffer+1,x
+        inx
+        cmp     #':'            ; separator
+        beq     :+
         sta     (ptr),y
         iny
-        dex
+        reloc_point *+2
+        cpx     path_buffer
         bne     :-
 
+        ;; Slash separator
+:       stx     ppos
         lda     #'/'
         sta     (ptr),y
         iny
 
+        ;; Name from command line
         reloc_point *+2
         jsr     skip_leading_spaces
         reloc_point *+2
@@ -313,7 +328,7 @@ ok:     sta     (ptr),y
         inx
         cpx     #65             ; Maximum path length+1
         bcc     :-
-        bcs     fail_gfi
+        bcs     compose
 
 notok:  dey
         tya
@@ -324,16 +339,12 @@ notok:  dey
         lda     #$A             ; param length
         sta     SSGINFO
         MLI_CALL GET_FILE_INFO, SSGINFO
-        beq     :+
-
-fail_gfi:
-        sec                     ; no such file - signal it's not us
-        rts
+        bne     compose         ; no such file - try next path directory
 
         ;; Check to see if type is CMD.
 :       lda     FIFILID
         cmp     #$F0            ; CMD
-        bne     fail_gfi        ; wrong type - ignore it
+        bne     compose         ; wrong type - try next path directory
 
         ;; Tell BASIC.SYSTEM it was handled.
         lda     #0
