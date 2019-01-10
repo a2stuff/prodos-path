@@ -14,7 +14,7 @@
 ;;; ============================================================
 ;;;
 ;;; Installed command memory structure:
-;;; * 3 pages - code, path buffers
+;;; * 2 pages - code, path buffer
 
 ;;; TODO:
 ;;;  * Support multi-segment path (e.g. /hd/bin:/hd/extras/bin)
@@ -118,15 +118,43 @@ CASE_MASK = $DF
 
         ;; Complete
         rts
+
+new_page:
+        .byte   0
+
+page_delta:
+        .byte   0
+
 .endproc
+
+;;; ============================================================
+;;;
+;;; Relocatable Section
+;;;
+;;; ============================================================
+
+;;; Use `reloc_counter ADDR` anywhere that needs the page updated
+;;;
+;;; Examples:
+;;;
+;;;      reloc_point *+2 ; update MSB of following JSR
+;;;      jsr routine
+;;;
+;;;      reloc_point *+1 ; update MSB used in following LDA
+;;;      lda #>routine
+
+::reloc_counter .set 0
+.macro reloc_point addr
+        ::.ident (.sprintf ("RL%04X", ::reloc_counter)) := addr
+        ::reloc_counter .set ::reloc_counter + 1
+.endmacro
+
+;;; Align handler to page boundary for easier relocation
+        .res    $2100 - *, 0
 
 ;;; ============================================================
 ;;; Command Handler
 ;;; ============================================================
-
-        ;; Align handler to page boundary for easier
-        ;; relocation
-        .res    $2100 - *, 0
 
 .proc handler
         ptr     := $06          ; pointer into VPATH
@@ -138,15 +166,15 @@ CASE_MASK = $DF
         sta     ptr+1
 
         ;; Check for this command, character by character.
-        page_num9 := *+2         ; address needing updating
+        reloc_point *+2
         jsr     skip_leading_spaces
 
         ldy     #0               ; position in command string
 
-        page_num6 := *+2         ; address needing updating
+        reloc_point *+2
 nxtchr: jsr     to_upper_ascii
 
-        page_num1 := *+2         ; address needing updating
+        reloc_point *+2
         cmp     command_string,y
         bne     check_if_token
         inx
@@ -161,7 +189,7 @@ nxtchr: jsr     to_upper_ascii
         ;; Point BI's parser at the command execution routine.
         lda     #<execute
         sta     XTRNADDR
-        page_num2 := *+1         ; address needing updating
+        reloc_point *+1
         lda     #>execute
         sta     XTRNADDR+1
 
@@ -182,13 +210,13 @@ nxtchr: jsr     to_upper_ascii
 
 check_if_token:
         ;; Is a PATH set?
-        page_num17 := *+2       ; address needing updating
+        reloc_point *+2
         lda     path_buffer
         beq     not_ours
 
-        page_num10 := *+2       ; address needing updating
+        reloc_point *+2
         jsr     skip_leading_spaces
-        page_num7 := *+2        ; address needing updating
+        reloc_point *+2
         jsr     to_upper_ascii
 
         cmp     #'A'
@@ -216,7 +244,7 @@ mloop:  iny                     ; Advance through token table
 
         ;; Check for match
 next_char:
-        page_num8 := *+2        ; address needing updating
+        reloc_point *+2
         jsr     to_upper_ascii  ; Next character
 
         ;; NOTE: Does not skip over spaces, unlike BASIC tokenizer
@@ -229,7 +257,7 @@ next_char:
 
         ;; Otherwise, advance to next token
 next_token:
-        page_num12 := *+2       ; address needing updating
+        reloc_point *+2
         jsr     skip_leading_spaces
 sloop:  lda     (tptr),y         ; Scan table looking for a high bit set
         iny
@@ -251,10 +279,10 @@ not_ours:
 
 maybe_invoke:
         ;; Compose path
-        page_num14 := *+2         ; address needing updating
+        reloc_point *+2
         ldx     path_buffer
         ldy     #1
-        page_num11 := *+2         ; address needing updating
+        reloc_point *+2
 :       lda     path_buffer,y
         sta     (ptr),y
         iny
@@ -265,9 +293,9 @@ maybe_invoke:
         sta     (ptr),y
         iny
 
-        page_num15 := *+2         ; address needing updating
+        reloc_point *+2
         jsr     skip_leading_spaces
-        page_num16 := *+2         ; address needing updating
+        reloc_point *+2
 :       jsr     to_upper_ascii
         cmp     #'.'
         beq     ok
@@ -388,10 +416,10 @@ execute:
         ;; Show current path
 
         ldx     #0
-        page_num3 := *+2         ; address needing updating
+        reloc_point *+2
 :       cpx     path_buffer
         beq     done
-        page_num4 := *+2         ; address needing updating
+        reloc_point *+2
         lda     path_buffer+1,x
         ora     #$80
         jsr     COUT
@@ -409,7 +437,7 @@ set_path:
         lda     (ptr),y
         tay
 :       lda     (ptr),y
-        page_num5 := *+2         ; address needing updating
+        reloc_point *+2
         sta     path_buffer,y
         dey
         bpl     :-
@@ -459,29 +487,15 @@ path_buffer:
         next_command := handler::next_command
 
 ;;; ============================================================
-;;; Installation Data
-
-new_page:
-        .byte   0
-page_delta:
-        .byte   0
+;;;
+;;; Relocation Table
+;;;
+;;; ============================================================
 
 relocation_table:
-        .byte   (table_end - *) / 2
-        .addr   handler::page_num1
-        .addr   handler::page_num2
-        .addr   handler::page_num3
-        .addr   handler::page_num4
-        .addr   handler::page_num5
-        .addr   handler::page_num6
-        .addr   handler::page_num7
-        .addr   handler::page_num8
-        .addr   handler::page_num9
-        .addr   handler::page_num10
-        .addr   handler::page_num11
-        .addr   handler::page_num12
-        .addr   handler::page_num14
-        .addr   handler::page_num15
-        .addr   handler::page_num16
-        .addr   handler::page_num17
-        table_end := *
+        .byte   ::reloc_counter
+        .repeat ::reloc_counter, rc
+        .addr ::.ident (.sprintf ("RL%04X", rc))
+        .endrepeat
+
+;;; ============================================================
