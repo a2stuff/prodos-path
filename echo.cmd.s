@@ -8,25 +8,46 @@ INBUF   := $200
         .org    $4000
 
         jsr     CROUT
+        ldx     #0
 
-        ldx     #cmd_length-1
+        ;; Skip any leading spaces
+        jsr     skip_spaces
 
-        ;; Skip spaces
-:       inx
+        ;; Invoked with "-" ?
         lda     INBUF,x
-        cmp     #' ' | $80
-        beq     :-
-        dex
+        cmp     #'-'|$80
+        bne     :+
+        inx
+:
+        ;; Skip any more leading spaces
+        jsr     skip_spaces
+
+        ;; Skip command name (i.e. "echo")
+        txa
+        clc
+        adc     #cmd_length
+        tax
+
+        ;; Skip leading spaces before string to echo
+        jsr     skip_spaces
 
         ;; Echo string
-:       inx
-        lda     INBUF,x
+:       lda     INBUF,x
         jsr     COUT
         cmp     #$D | $80
-        bne     :-
+        beq     exit
+        inx
+        jmp     :-
 
-        clc
+exit:   rts
+
+.proc skip_spaces
+        lda     INBUF,x
+        cmp     #' '|$80
+        beq     :+
         rts
-
+:       inx
+        jmp     skip_spaces
+.endproc
 
 cmd_length = .strlen("echo")

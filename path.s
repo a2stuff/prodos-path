@@ -373,6 +373,7 @@ fail_gfi:
         ;; Invoke command
         jsr     cmd_load_addr
 
+        clc                     ; success
         rts                     ; Return to BASIC.SYSTEM
 
 fail_load:

@@ -1,11 +1,9 @@
 
         .include "apple2.inc"
 
-BELL := $FBE4
+BELL := $FF3A
 
         .org    $4000
 
-        ldy     #0
         jsr     BELL
-        clc
         rts
