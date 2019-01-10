@@ -134,8 +134,8 @@ CASE_MASK = $DF
         ptr      := $06
 
         ;; Check for this command, character by character.
-        ldx     #0
-        ;;  TODO: skip leading spaces
+        page_num9 := *+2         ; address needing updating
+        jsr     skip_leading_spaces
 
 nxtchr: lda     INBUF,x
         page_num6 := *+2         ; address needing updating
@@ -176,15 +176,13 @@ nxtchr: lda     INBUF,x
 
 check_if_token:
         ;; Is a PATH set?
-        page_num18 := *+2         ; address needing updating
+        page_num18 := *+2       ; address needing updating
         lda     path_buffer
         beq     not_ours
 
-        ;; TODO: skip leading spaces
-
-        ;; Ensure it's alpha
-        lda     INBUF
-        page_num7 := *+2         ; address needing updating
+        page_num10 := *+2       ; address needing updating
+        jsr     skip_leading_spaces
+        page_num7 := *+2        ; address needing updating
         jsr     to_upper_ascii
 
         cmp     #'A'
@@ -226,7 +224,7 @@ next_char:
 
         ;; Otherwise, advance to next token
 next_token:
-        ldx     #0              ; Start next match at start of input line
+        jsr     skip_leading_spaces
 sloop:  lda     (ptr),y         ; Scan table looking for a high bit set
         iny
         bne     :+
@@ -267,7 +265,7 @@ maybe_invoke:
         sta     (ptr),y
         iny
 
-        ldx     #0
+        jsr     skip_leading_spaces
 :       lda     INBUF,x
         and     #$7F
         cmp     #'.'
@@ -438,6 +436,18 @@ set_path:
         bcc     skip
         and     #CASE_MASK
 skip:   rts
+.endproc
+
+;;; Returns with X pointing at first non-space in INBUF,
+;;; and that character loaded in A.
+
+.proc skip_leading_spaces
+        ldx     #$FF
+:       inx
+        lda     INBUF,x
+        cmp     #' '|$80
+        beq     :-
+        rts
 .endproc
 
 ;;; ============================================================
