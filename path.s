@@ -141,19 +141,22 @@ CASE_MASK = $DF
         page_num9 := *+2         ; address needing updating
         jsr     skip_leading_spaces
 
+        ldy     #0               ; position in command string
+
         page_num6 := *+2         ; address needing updating
 nxtchr: jsr     to_upper_ascii
 
         page_num1 := *+2         ; address needing updating
-        cmp     command_string,x
+        cmp     command_string,y
         bne     check_if_token
         inx
-        cpx     #command_length
+        iny
+        cpy     #command_length
         bne     nxtchr
 
         ;; A match - indicate end of command string for BI's parser.
-        lda     #command_length-1
-        sta     XLEN
+        dey
+        sty     XLEN
 
         ;; Point BI's parser at the command execution routine.
         lda     #<execute
@@ -309,12 +312,17 @@ fail_gfi:
         sta     XCNUM
         sta     PBITS
         sta     PBITS+1
-        lda     #$FF            ; TODO: Signal how much of input was consumed (all?)
-        sta     XLEN
         lda     #<XRETURN
         sta     XTRNADDR
         lda     #>XRETURN
         sta     XTRNADDR+1
+
+        ;; MLI/BI trashes part of INBUF, so stash it in upper half.
+        ldx     #$7F
+:       lda     INBUF,x
+        sta     INBUF+$80,x
+        dex
+        bpl     :-
 
         ;; Reserve buffer for I/O
         lda     #4
@@ -341,21 +349,13 @@ fail_gfi:
         lda     #>max_cmd_size
         sta     RWCOUNT+1
 
-
         MLI_CALL READ, SREAD
         bne     fail_load
-
-        ;; CLOSE call trashes lower bytes of INBUF, so stash it.
-        ldx     #$7F
-:       lda     INBUF,x
-        sta     INBUF+$80,x
-        dex
-        bpl     :-
 
         MLI_CALL CLOSE, SCLOSE
         jsr     FREEBUFR
 
-        ;; Restore it.
+        ;; Restore INBUF now that MLI/BI work is done.
         ldx     #$7F
 :       lda     INBUF+$80,x
         sta     INBUF,x
