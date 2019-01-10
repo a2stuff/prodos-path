@@ -129,7 +129,13 @@ CASE_MASK = $DF
         .res    $2100 - *, 0
 
 .proc handler
-        ptr      := $06
+        ptr     := $06          ; pointer into VPATH
+        tptr    := $08          ; pointer into TOKEN_NAME_TABLE
+
+        lda     VPATH1
+        sta     ptr
+        lda     VPATH1+1
+        sta     ptr+1
 
         ;; Check for this command, character by character.
         page_num9 := *+2         ; address needing updating
@@ -189,20 +195,20 @@ check_if_token:
 
         ;; Check if it's a BASIC token. Based on the AppleSoft BASIC source.
 
-        ;; Point ptr at TOKEN_NAME_TABLE less one page (will advance below)
+        ;; Point tptr at TOKEN_NAME_TABLE less one page (will advance below)
         lda     #<(TOKEN_NAME_TABLE-$100)
-        sta     ptr
+        sta     tptr
         lda     #>(TOKEN_NAME_TABLE-$100)
-        sta     ptr+1
+        sta     tptr+1
 
         ;; These are immediately incremented
         dex
-        ldy     #$FF            ; (ptr),y offset TOKEN_NAME_TABLE
+        ldy     #$FF            ; (tptr),y offset TOKEN_NAME_TABLE
 
         ;; Match loop
 mloop:  iny                     ; Advance through token table
         bne     :+
-        inc     ptr+1
+        inc     tptr+1
 :       inx
 
         ;; Check for match
@@ -213,7 +219,7 @@ next_char:
         ;; NOTE: Does not skip over spaces, unlike BASIC tokenizer
 
         sec                     ; Compare by subtraction..
-        sbc     (ptr),Y
+        sbc     (tptr),Y
         beq     mloop
         cmp     #$80          ; If only difference was the high bit
         beq     not_ours      ; then it's end-of-token -- and a match!
@@ -222,13 +228,13 @@ next_char:
 next_token:
         page_num12 := *+2       ; address needing updating
         jsr     skip_leading_spaces
-sloop:  lda     (ptr),y         ; Scan table looking for a high bit set
+sloop:  lda     (tptr),y         ; Scan table looking for a high bit set
         iny
         bne     :+
-        inc     ptr+1
+        inc     tptr+1
 :       asl
         bcc     sloop           ; High bit clear, keep looking
-        lda     (ptr),y         ; End of table?
+        lda     (tptr),y         ; End of table?
         bne     next_char       ; Nope, check for a match
         beq     maybe_invoke
 
@@ -241,21 +247,15 @@ not_ours:
 ;;; ============================================================
 
 maybe_invoke:
-        lda     VPATH1
-        sta     ptr
-        lda     VPATH1+1
-        sta     ptr+1
-
         ;; Compose path
-        ldx     #0
+        page_num14 := *+2         ; address needing updating
+        ldx     path_buffer
         ldy     #1
         page_num11 := *+2         ; address needing updating
-:       lda     path_buffer+1,x
-        inx
+:       lda     path_buffer,y
         sta     (ptr),y
         iny
-        page_num14 := *+2         ; address needing updating
-        cpx     path_buffer
+        dex
         bne     :-
 
         lda     #'/'
@@ -405,11 +405,6 @@ done:   clc
 ;;; --------------------------------------------------
         ;; Set path
 set_path:
-        lda     VPATH1
-        sta     ptr
-        lda     VPATH1+1
-        sta     ptr+1
-
         ldy     #0
         lda     (ptr),y
         tay
