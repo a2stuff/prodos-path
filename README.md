@@ -35,4 +35,4 @@ Notes:
 * Search order when a command is typed:
    * ProDOS BASIC.SYSTEM intrinsics (`CAT`, `PREFIX`, etc)
    * AppleSoft keywords (`LIST`, `PRINT`, etc)
-   * CMD files in paths, in listed
+   * CMD files in paths, in listed order
