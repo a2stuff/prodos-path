@@ -342,7 +342,7 @@ notok:  dey
         bne     compose         ; no such file - try next path directory
 
         ;; Check to see if type is CMD.
-:       lda     FIFILID
+        lda     FIFILID
         cmp     #$F0            ; CMD
         bne     compose         ; wrong type - try next path directory
 
