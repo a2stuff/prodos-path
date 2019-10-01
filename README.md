@@ -1,5 +1,8 @@
 # CMD executable PATH for ProDOS's BASIC.SYSTEM
 
+[![Build Status](https://travis-ci.org/a2stuff/prodos-path.svg?branch=master)](https://travis-ci.org/a2stuff/prodos-path)
+
+
 Build with [ca65](https://cc65.github.io/doc/ca65.html)
 
 Installation:
