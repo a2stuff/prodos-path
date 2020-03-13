@@ -5,30 +5,22 @@
 
 set -e
 
-PACKDIR="out/package"
-FINFO="$PACKDIR/_FileInformation.txt"
+PACKDIR=$(mktemp -d)
 IMGFILE="out/prodos-path.po"
 VOLNAME="path"
 
-mkdir -p "$PACKDIR"
-echo "" > "$FINFO"
-
-# Copy renamed files (with type/auxtype info) into package directory.
-
-cp "out/path.BIN" "$PACKDIR/path#062000"
-cp "out/bell.CMD" "$PACKDIR/bell#F04000"
-cp "out/echo.CMD" "$PACKDIR/echo#F04000"
-cp "out/hello.CMD" "$PACKDIR/hello#F04000"
-
-# Create a new disk image.
-
 rm -f "$IMGFILE"
-
 cadius CREATEVOLUME "$IMGFILE" "$VOLNAME" 140KB --no-case-bits --quiet
-cadius ADDFILE "$IMGFILE" "/$VOLNAME" "$PACKDIR/path#062000" --no-case-bits --quiet
-cadius ADDFILE "$IMGFILE" "/$VOLNAME" "$PACKDIR/bell#F04000" --no-case-bits --quiet
-cadius ADDFILE "$IMGFILE" "/$VOLNAME" "$PACKDIR/echo#F04000" --no-case-bits --quiet
-cadius ADDFILE "$IMGFILE" "/$VOLNAME" "$PACKDIR/hello#F04000" --no-case-bits --quiet
+
+add_file () {
+    cp "$1" "$PACKDIR/$2"
+    cadius ADDFILE "$IMGFILE" "/$VOLNAME" "$PACKDIR/$2" --no-case-bits --quiet
+}
+
+add_file "out/path.BIN" "path#062000"
+add_file "out/bell.CMD" "bell#F04000"
+add_file "out/echo.CMD" "echo#F04000"
+add_file "out/hello.CMD" "hello#F04000"
 
 rm -r "$PACKDIR"
 
