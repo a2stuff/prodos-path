@@ -5,9 +5,9 @@ LDFLAGS = --config apple2-asm.cfg
 OUTDIR = out
 
 TARGETS = $(OUTDIR)/path.BIN \
-	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/vols.CMD
+	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/online.CMD
 
-.PHONY: clean all
+.PHONY: clean all package
 all: $(OUTDIR) $(TARGETS)
 
 $(OUTDIR):
@@ -20,6 +20,8 @@ clean:
 	rm -f $(OUTDIR)/*.list
 	rm -f $(TARGETS)
 
+package:
+	./package.sh
 
 $(OUTDIR)/%.o: %.s $(HEADERS)
 	ca65 $(CAFLAGS) $(DEFINES) --listing $(basename $@).list -o $@ $<

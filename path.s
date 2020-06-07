@@ -245,7 +245,18 @@ next_char:
         sbc     (tptr),Y
         beq     mloop
         cmp     #$80          ; If only difference was the high bit
-        beq     not_ours      ; then it's end-of-token -- and a match!
+        bne     next_token    ; then it's end-of-token -- and a match!
+
+        ;; Only if next command char is not alpha.
+        ;; This allows 'ON' as a prefix (e.g. 'ONLINE'),
+        ;; without preventing 'RUN100' from being typed.
+
+        inx
+        jsr     to_upper_ascii
+        cmp     #'A'
+        bcc     not_ours
+        cmp     #'Z'+1
+        bcs     not_ours
 
         ;; Otherwise, advance to next token
 next_token:
@@ -262,17 +273,13 @@ sloop:  lda     (tptr),y         ; Scan table looking for a high bit set
         beq     maybe_invoke
 
 not_ours:
+fail_invoke:
         sec                     ; Signal failure...
         next_command := *+1
         jmp     $ffff           ; Execute next command in chain
 
 
 ;;; ============================================================
-
-fail_invoke:
-        sec
-        rts
-
 
 maybe_invoke:
 
@@ -409,9 +416,8 @@ notok:  dey
 
 fail_load:
         jsr     FREEBUFR
-        lda     #8              ; I/O ERROR - TODO: is this used???
-        sec
-        rts
+        reloc_point *+2
+        jmp     fail_invoke
 
 ;;; ============================================================
 ;;; ============================================================

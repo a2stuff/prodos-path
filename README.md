@@ -2,10 +2,7 @@
 
 [![Build Status](https://travis-ci.org/a2stuff/prodos-path.svg?branch=master)](https://travis-ci.org/a2stuff/prodos-path)
 
-
 💾 Disk images can be found on the [Releases](https://github.com/a2stuff/prodos-path/releases) page 💾
-
-
 
 Build with [ca65](https://cc65.github.io/doc/ca65.html)
 
@@ -33,19 +30,21 @@ Example:
 /hd/cmds
 ] BELL                   - will invoke /hd/cmds/BELL if present
 ] HELLO                  - will invoke /hd/cmds/HELLO if present
-] VOLS                   - will invoke /hd/cmds/VOLS if present
+] ONLINE                 - will invoke /hd/cmds/ONLINE if present
 ```
 
 Notes:
-* Allocates a permanent buffer to store the code and path (2 pages)
-* Can be invoked as lower case (e.g. `path ...`)
-* Applesoft BASIC commands are unaffected (but can't be CMD names)
 * Search order when a command is typed:
    * ProDOS BASIC.SYSTEM intrinsics (`CAT`, `PREFIX`, etc)
-   * AppleSoft keywords (`LIST`, `PRINT`, etc)
+   * BASIC keywords (`LIST`, `PRINT`, etc)
    * CMD files in paths, in listed order
+* Allocates a permanent buffer to store the code and path (2 pages)
+* `PATH` can be invoked as lower case (e.g. `path /DISK/CMDS`)
+* Commands can be invoked as lower case (e.g. `hello`)
+* Applesoft BASIC commands are unaffected (but can't be CMD names)
+   * Commands with BASIC keywords as _prefixes_ are allowed as long as the command continues with an alphabetic character. For example, `ONLINE` is allowed despite conflicting with the valid BASIC statement `ONLINE GOTO10` which is short for `ON LINE GOTO 10`.
 
-Sample commands:
+Sample commands included:
 * `BELL` - beeps the speaker
 * `HELLO` - shows a short message
-* `VOLS` - lists online volumes (volume name, slot and drive)
+* `ONLINE` - lists online volumes (volume name, slot and drive)
