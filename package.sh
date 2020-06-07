@@ -21,6 +21,7 @@ add_file "out/path.BIN" "path#062000"
 add_file "out/bell.CMD" "bell#F04000"
 add_file "out/echo.CMD" "echo#F04000"
 add_file "out/hello.CMD" "hello#F04000"
+add_file "out/vols.CMD" "vols#F04000"
 
 rm -r "$PACKDIR"
 

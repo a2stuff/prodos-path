@@ -4,6 +4,7 @@
 MLI             := $BF00
 
 GET_FILE_INFO   = $C4
+ON_LINE         = $C5
 OPEN            = $C8
 READ            = $CA
 CLOSE           = $CC

@@ -33,6 +33,7 @@ Example:
 /hd/cmds
 ] BELL                   - will invoke /hd/cmds/BELL if present
 ] HELLO                  - will invoke /hd/cmds/HELLO if present
+] VOLS                   - will invoke /hd/cmds/VOLS if present
 ```
 
 Notes:
@@ -43,3 +44,8 @@ Notes:
    * ProDOS BASIC.SYSTEM intrinsics (`CAT`, `PREFIX`, etc)
    * AppleSoft keywords (`LIST`, `PRINT`, etc)
    * CMD files in paths, in listed order
+
+Sample commands:
+* `BELL` - beeps the speaker
+* `HELLO` - shows a short message
+* `VOLS` - lists online volumes (volume name, slot and drive)

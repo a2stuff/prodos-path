@@ -5,7 +5,7 @@ LDFLAGS = --config apple2-asm.cfg
 OUTDIR = out
 
 TARGETS = $(OUTDIR)/path.BIN \
-	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD
+	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/vols.CMD
 
 .PHONY: clean all
 all: $(OUTDIR) $(TARGETS)
