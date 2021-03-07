@@ -2,7 +2,9 @@
 ;;; ProDOS MLI / Global Page
 
 MLI             := $BF00
+DATE            := $BF90
 
+SET_FILE_INFO   = $C3
 GET_FILE_INFO   = $C4
 ON_LINE         = $C5
 OPEN            = $C8
@@ -55,6 +57,10 @@ FBITS           := $BE56        ; Found parameter bits
         ;; paths must be used if no prefix is set.
 .endenum
 
+VADDR           := $BE58        ; Address parameter
+VBYTE           := $BE5A        ; Byte parameter
+VSLOT           := $BE61        ; Slot parameter
+VTYPE           := $BE6A        ; Type parameter
 VPATH1          := $BE6C        ; Pathname buffer
 
 GOSYSTEM        := $BE70        ; Use instead of MLI
@@ -63,6 +69,8 @@ XRETURN         := $BE9E        ; Handy RTS
 
 SSGINFO         := $BEB4        ; GET_FILE_INFO Parameter block
 FIFILID         := $BEB8        ; (set size $A)
+FIAUXID         := $BEB9
+FIMDATE         := $BEBE
 
 SOPEN           := $BECB        ; OPEN
 OSYSBUF         := $BECE

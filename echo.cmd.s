@@ -1,9 +1,6 @@
 
         .include "apple2.inc"
-
-CROUT   := $FD8E
-COUT    := $FDED
-INBUF   := $200
+        .include "more_apple2.inc"
 
         .org    $4000
 
@@ -39,7 +36,8 @@ INBUF   := $200
         inx
         jmp     :-
 
-exit:   rts
+exit:   clc
+        rts
 
 .proc skip_spaces
         lda     INBUF,x

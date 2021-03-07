@@ -9,27 +9,13 @@
         .org $2000
 
         .include "apple2.inc"
+        .include "more_apple2.inc"
         .include "prodos.inc"
 
 ;;; ============================================================
 
 cmd_load_addr := $4000
 max_cmd_size   = $2000
-
-;;; ============================================================
-;;; Monitor ROM routines/locations
-
-INBUF           := $200         ; GETLN input buffer
-
-CROUT   := $FD8E
-COUT    := $FDED
-
-MOVE    := $FE2C                ; call with Y=0
-MOVE_SRC   := $3C
-MOVE_END   := $3E
-MOVE_DST   := $42
-
-TOKEN_NAME_TABLE := $D0D0
 
 CASE_MASK = $DF
 
@@ -342,6 +328,10 @@ notok:  dey
         ldy     #0
         sta     (ptr),y
 
+        ;; Indicate end of command string for BI's parser (if command uses it)
+        dex
+        stx     XLEN
+
         ;; Check to see if path exists.
         lda     #$A             ; param length
         sta     SSGINFO
@@ -363,7 +353,7 @@ notok:  dey
         lda     #>XRETURN
         sta     XTRNADDR+1
 
-        ;; MLI/BI trashes part of INBUF, so stash it in upper half.
+        ;; MLI/BI trashes part of INBUF (clock driver?), so stash it in upper half.
         ldx     #$7F
 :       lda     INBUF,x
         sta     INBUF+$80,x
@@ -411,7 +401,6 @@ notok:  dey
         ;; Invoke command
         jsr     cmd_load_addr
 
-        clc                     ; success
         rts                     ; Return to BASIC.SYSTEM
 
 fail_load:

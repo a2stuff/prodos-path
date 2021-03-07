@@ -1,8 +1,6 @@
 
         .include "apple2.inc"
-
-CROUT   := $FD8E
-COUT    := $FDED
+        .include "more_apple2.inc"
 
         .org    $4000
 
@@ -16,6 +14,8 @@ COUT    := $FDED
         jmp     :-
 
 done:   jsr     CROUT
+
+        clc
         rts
 
 str:    .byte   "Hello, world!", 0

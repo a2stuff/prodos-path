@@ -1,9 +1,7 @@
 
         .include "apple2.inc"
+        .include "more_apple2.inc"
         .include "prodos.inc"
-
-CROUT           := $FD8E        ; Issue a carriage return.
-COUT            := $FDED        ; Output a character.
 
         .org    $4000
 
@@ -83,7 +81,8 @@ next:   dec     count
         sta     ptr+1
         jmp     loop
 
-exit:   rts
+exit:   clc
+        rts
 
 ;;; ============================================================
 

@@ -21,6 +21,7 @@ Once set, binary files of type `CMD` in the specified directories can be invoked
 * CMD file is loaded at $4000 and invoked; should return (`rts`) on completion.
 * The command line will be present at $200 (`GETLN` input buffer).
 * Supports multi-segment, colon-separated paths, e.g. `/hd/cmds:/hd2/more.cmds`
+* Commands can use the BI parser for arguments. See `chtype.cmd.s` for an example.
 
 Example:
 ```
@@ -48,3 +49,10 @@ Sample commands included:
 * `BELL` - beeps the speaker
 * `HELLO` - shows a short message
 * `ONLINE` - lists online volumes (volume name, slot and drive)
+* `ECHO` - echoes back anything following the command
+* `CHTYPE` - change the type/auxtype of a file. e.g. `chtype file,T$F1,A$1234`
+  * `T` (type) and `A` (auxtype) are optional. If neither is specified, current types are shown.
+  * `S` and `D` arguments can be used to specify slot and drive.
+* `CHTIME` - change the modification date/time of a file. e.g. `chtime file,A$1234,B$5678`
+  * `A` (date) and `B` (time) are optional. If neither is specified, current values are shown.
+  * `S` and `D` arguments can be used to specify slot and drive.
