@@ -29,7 +29,7 @@ $(OUTDIR)/%.o: %.s $(HEADERS)
 
 $(OUTDIR)/%.BIN $(OUTDIR)/%.SYS: $(OUTDIR)/%.o
 	ld65 $(LDFLAGS) -o $@ $<
-	command -v xattr &> /dev/null && xattr -wx prodos.AuxType '00 20' $@
+	if command -v xattr &> /dev/null; then xattr -wx prodos.AuxType '00 20' $@; fi
 
 $(OUTDIR)/%.CMD: $(OUTDIR)/%.cmd.o
 	ld65 $(LDFLAGS) -o $@ $<
