@@ -1,10 +1,10 @@
 
-CAFLAGS = --target apple2enh --list-bytes 0
-LDFLAGS = --config apple2-asm.cfg
+CAFLAGS := --target apple2enh --list-bytes 0
+LDFLAGS := --config apple2-asm.cfg
 
-OUTDIR = out
+OUTDIR := out
 
-TARGETS = $(OUTDIR)/path.BIN \
+TARGETS := $(OUTDIR)/path.BIN \
 	$(OUTDIR)/chtype.CMD $(OUTDIR)/chtime.CMD \
 	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/online.CMD
 
@@ -16,7 +16,7 @@ all: $(OUTDIR) $(TARGETS)
 $(OUTDIR):
 	mkdir -p $(OUTDIR)
 
-HEADERS = $(wildcard *.inc)
+HEADERS := $(wildcard *.inc)
 
 clean:
 	rm -f $(OUTDIR)/*.o

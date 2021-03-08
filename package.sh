@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Use Cadius to create a disk image for distribution
 # https://github.com/mach-kernel/cadius
@@ -18,10 +18,9 @@ add_file () {
 }
 
 add_file "out/path.BIN" "path#062000"
-add_file "out/bell.CMD" "bell#F04000"
-add_file "out/echo.CMD" "echo#F04000"
-add_file "out/hello.CMD" "hello#F04000"
-add_file "out/online.CMD" "online#F04000"
+for file in bell echo hello online chtype chtime; do
+    add_file "out/${file}.CMD" "${file}#F04000"
+done
 
 rm -r "$PACKDIR"
 
