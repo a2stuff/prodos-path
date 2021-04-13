@@ -19,6 +19,7 @@ cmdname         - load and execute named CMD, if in PATH
 
 Once set, binary files of type `CMD` in the specified directories can be invoked by name.
 * CMD file is loaded at $4000 and invoked; should return (`rts`) on completion.
+* $4000-$5FFF is assumed reserved for the CMD file and any buffers it needs.
 * The command line will be present at $200 (`GETLN` input buffer).
 * Supports multi-segment, colon-separated paths, e.g. `/hd/cmds:/hd2/more.cmds`
 * Commands can use the BI parser for arguments. See `chtype.cmd.s` for an example.
@@ -46,13 +47,16 @@ Notes:
    * Commands with BASIC keywords as _prefixes_ are allowed as long as the command continues with an alphabetic character. For example, `ONLINE` is allowed despite conflicting with the valid BASIC statement `ONLINE GOTO10` which is short for `ON LINE GOTO 10`.
 
 Sample commands included:
-* `BELL` - beeps the speaker
-* `HELLO` - shows a short message
-* `ONLINE` - lists online volumes (volume name, slot and drive)
-* `ECHO` - echoes back anything following the command
-* `CHTYPE` - change the type/auxtype of a file. e.g. `chtype file,T$F1,A$1234`
-  * `T` (type) and `A` (auxtype) are optional. If neither is specified, current types are shown.
-  * `S` and `D` arguments can be used to specify slot and drive.
-* `CHTIME` - change the modification date/time of a file. e.g. `chtime file,A$1234,B$5678`
-  * `A` (date) and `B` (time) are optional. If neither is specified, current values are shown.
-  * `S` and `D` arguments can be used to specify slot and drive.
+* Useful utilities:
+    * `ONLINE` - lists online volumes (volume name, slot and drive)
+    * `COPY` - copy a single file, e.g. `copy /path/to/file,dstfile`
+    * `CHTYPE` - change the type/auxtype of a file. e.g. `chtype file,T$F1,A$1234`
+        * `T` (type) and `A` (auxtype) are optional. If neither is specified, current types are shown.
+        * `S` and `D` arguments can be used to specify slot and drive.
+    * `CHTIME` - change the modification date/time of a file. e.g. `chtime file,A$1234,B$5678`
+        * `A` (date) and `B` (time) are optional. If neither is specified, current values are shown.
+        * `S` and `D` arguments can be used to specify slot and drive.
+* Other examples:
+    * `BELL` - beeps the speaker
+    * `HELLO` - shows a short message
+    * `ECHO` - echoes back anything following the command

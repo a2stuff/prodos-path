@@ -6,6 +6,7 @@ OUTDIR := out
 
 TARGETS := $(OUTDIR)/path.BIN \
 	$(OUTDIR)/chtype.CMD $(OUTDIR)/chtime.CMD \
+	$(OUTDIR)/copy.CMD \
 	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/online.CMD
 
 XATTR := $(shell command -v xattr 2> /dev/null)
