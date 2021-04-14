@@ -9,10 +9,15 @@ INBUF   := $200
 LINUM   := $1B
 
 ;;; ============================================================
+;;; I/O Locations
+
+SPKR    := $C030
+
+;;; ============================================================
 ;;; Monitor ROM routines
 
-
 PRTAX   := $F941
+WAIT    := $FCA8
 CROUT   := $FD8E
 PRBYTE  := $FDDA
 COUT    := $FDED
@@ -28,5 +33,4 @@ BELL    := $FF3A
 ;;; Applesoft ROM locations
 
 TOKTABL := $D0D0
-
 LINPRT  := $ED24

@@ -29,7 +29,7 @@
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (Name, Type, Address)
+        ;; Set accepted parameter flags (2 Filenames)
 
         lda     #PBitsFlags::FN1 | PBitsFlags::FN2 ; Filenames
         sta     PBITS

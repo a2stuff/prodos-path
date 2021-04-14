@@ -52,6 +52,7 @@ Sample commands included:
     * `COPY` - copy a single file, e.g. `copy /path/to/file,dstfile`
     * `TYPE` - show file contents (TXT, BAS, or BIN/other), e.g. `type filename`
     * `DATE` - prints the current ProDOS date and time
+    * `BUZZ` - emits the ProDOS "nice little tone"
     * `CHTYPE` - change the type/auxtype of a file. e.g. `chtype file,T$F1,A$1234`
         * `T` (type) and `A` (auxtype) are optional. If neither is specified, current types are shown.
         * `S` and `D` arguments can be used to specify slot and drive.

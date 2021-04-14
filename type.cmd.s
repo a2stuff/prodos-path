@@ -29,9 +29,9 @@
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (Name, Type, Address)
+        ;; Set accepted parameter flags (Filename)
 
-        lda     #PBitsFlags::FN1 ; Filenames
+        lda     #PBitsFlags::FN1 ; Filename
         sta     PBITS
         lda     #PBitsFlags::SD ; Slot & Drive handling
         sta     PBITS+1

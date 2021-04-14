@@ -5,7 +5,7 @@ LDFLAGS := --config apple2-asm.cfg
 OUTDIR := out
 
 TARGETS := $(OUTDIR)/path.BIN \
-	$(OUTDIR)/chtype.CMD $(OUTDIR)/chtime.CMD \
+	$(OUTDIR)/chtype.CMD $(OUTDIR)/chtime.CMD $(OUTDIR)/buzz.CMD \
 	$(OUTDIR)/copy.CMD $(OUTDIR)/date.CMD $(OUTDIR)/type.CMD \
 	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/online.CMD
 
