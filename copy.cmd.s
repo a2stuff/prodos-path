@@ -41,10 +41,12 @@
 
 ;;; ============================================================
 
+        FN1REF := $D6
+        FN2REF := $D7
+
         FN1INFO := $2EE
-        FN1BUF  := $4200
-        FN2BUF  := $4600
-        DATABUF := $4A00
+        FN2BUF  := $4200
+        DATABUF := $4600
         DATALEN = $6000 - DATABUF
 
 execute:
@@ -72,9 +74,9 @@ rts1:   rts
         bpl     :-
 
         ;; Open FN1
-        lda     #<FN1BUF
+        lda     HIMEM           ; Use BI's general purpose buffer
         sta     OSYSBUF
-        lda     #>FN1BUF
+        lda     HIMEM+1
         sta     OSYSBUF+1
         lda     #OPEN
         jsr     GOSYSTEM
@@ -101,7 +103,7 @@ rts1:   rts
         dey
         bpl     :-
 
-        ;; Get FN1 info
+        ;; Get FN2 info
         lda     #GET_FILE_INFO
         jsr     GOSYSTEM
         bcs     :+
@@ -195,7 +197,4 @@ finish: jsr     close
         rts
 .endproc
 
-FN1REF: .byte   0
-FN2REF: .byte   0
-
-        .assert * <= FN1BUF, error, "Too long"
+        .assert * <= FN2BUF, error, "Too long"

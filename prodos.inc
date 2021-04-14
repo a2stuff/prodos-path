@@ -3,7 +3,13 @@
 
 MLI             := $BF00
 DATE            := $BF90
+DATELO          := $BF90
+DATEHI          := $BF91
+TIME            := $BF92
+TIMELO          := $BF92
+TIMEHI          := $BF93
 
+GET_TIME        = $82
 CREATE          = $C0
 SET_FILE_INFO   = $C3
 GET_FILE_INFO   = $C4

@@ -136,7 +136,7 @@ page_delta:
 
 .proc handler
         ptr     := $06          ; pointer into VPATH
-        tptr    := $08          ; pointer into TOKEN_NAME_TABLE
+        tptr    := $08          ; pointer into TOKTABL
 
         lda     VPATH1
         sta     ptr
@@ -204,15 +204,15 @@ check_if_token:
 
         ;; Check if it's a BASIC token. Based on the AppleSoft BASIC source.
 
-        ;; Point tptr at TOKEN_NAME_TABLE less one page (will advance below)
-        lda     #<(TOKEN_NAME_TABLE-$100)
+        ;; Point tptr at TOKTABL less one page (will advance below)
+        lda     #<(TOKTABL-$100)
         sta     tptr
-        lda     #>(TOKEN_NAME_TABLE-$100)
+        lda     #>(TOKTABL-$100)
         sta     tptr+1
 
         ;; These are immediately incremented
         dex
-        ldy     #$FF            ; (tptr),y offset TOKEN_NAME_TABLE
+        ldy     #$FF            ; (tptr),y offset TOKTABL
 
         ;; Match loop
 mloop:  iny                     ; Advance through token table

@@ -4,8 +4,15 @@
 INBUF   := $200
 
 ;;; ============================================================
+;;; Zero Page
+
+LINUM   := $1B
+
+;;; ============================================================
 ;;; Monitor ROM routines
 
+
+PRTAX   := $F941
 CROUT   := $FD8E
 PRBYTE  := $FDDA
 COUT    := $FDED
@@ -20,4 +27,6 @@ BELL    := $FF3A
 ;;; ============================================================
 ;;; Applesoft ROM locations
 
-TOKEN_NAME_TABLE := $D0D0
+TOKTABL := $D0D0
+
+LINPRT  := $ED24
