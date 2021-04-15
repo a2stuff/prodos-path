@@ -33,32 +33,22 @@
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (Name, Type, Address)
+        ;; Set accepted parameter flags
 
-        lda     #PBitsFlags::T | PBitsFlags::FN1 ; Filename and Type
+        ;; Filename and Type
+        lda     #PBitsFlags::T | PBitsFlags::FN1
         sta     PBITS
 
-        lda     #PBitsFlags::AD | PBitsFlags::SD ; Address, Slot & Drive handling
+        ;; Address (used as AuxType), Slot & Drive handling
+        lda     #PBitsFlags::AD | PBitsFlags::SD
         sta     PBITS+1
 
         clc                     ; Success (so far)
-        rts                     ; Return to BASIC.SYSTEM
+rts1:   rts                     ; Return to BASIC.SYSTEM
 
 ;;; ============================================================
 
 execute:
-        ;; Verify required arguments
-
-        lda     FBITS
-        and     #PBitsFlags::FN1 ; Filename?
-        bne     :+
-        lda     #$10            ; SYNTAX ERROR
-        sec
-rts1:   rts
-:
-
-;;; --------------------------------------------------
-
         ;; Get the existing file info
         lda     #$A
         sta     SSGINFO

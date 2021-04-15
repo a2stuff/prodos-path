@@ -34,38 +34,20 @@
 
         ;; Set accepted parameter flags
 
-        lda     #PBitsFlags::FN1 ; Filename
+        ;; Filename
+        lda     #PBitsFlags::FN1
         sta     PBITS
 
-        ;; Address, Byte, Slot & Drive handling
+        ;; Address (A=Date word), Byte (B=Time word), Slot & Drive handling
         lda     #PBitsFlags::AD | PBitsFlags::B | PBitsFlags::SD
         sta     PBITS+1
 
         clc                     ; Success (so far)
-        rts                     ; Return to BASIC.SYSTEM
-
-;;; ============================================================
-
-not_ours:
-        sec                     ; Signal failure...
-        next_command := *+1
-        jmp     $ffff           ; Execute next command in chain
+rts1:   rts                     ; Return to BASIC.SYSTEM
 
 ;;; ============================================================
 
 execute:
-        ;; Verify required arguments
-
-        lda     FBITS
-        and     #PBitsFlags::FN1 ; Filename?
-        bne     :+
-        lda     #$10            ; SYNTAX ERROR
-        sec
-rts1:   rts
-:
-
-;;; --------------------------------------------------
-
         ;; Get the existing file info
         lda     #$A
         sta     SSGINFO
