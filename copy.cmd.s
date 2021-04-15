@@ -59,6 +59,8 @@ execute:
         ;; /ABS,REL remains /ABS,REL (still relative!).
 
         jsr     get_prefix
+        bcs     rts1
+
         lda     VPATH1
         ldx     VPATH1+1
         jsr     fix_path
@@ -214,6 +216,7 @@ finish: jsr     close
 .endproc
 
 ;;; Leave PREFIX at INBUF; infers it the same way as BI if empty.
+;;; Returns with Carry set on failure.
 .proc get_prefix
         ;; Try fetching prefix
         MLI_CALL GET_PREFIX, get_prefix_params
@@ -234,8 +237,11 @@ finish: jsr     close
 
         ;; Get volume name and convert to path
         MLI_CALL ON_LINE, on_line_params
-        ;; TODO: Handle failure
-        lda     INBUF+1
+        bcc     :+
+        jsr     BADCALL         ; sets Carry
+        rts
+
+:       lda     INBUF+1
         and     #$0F            ; mask off name_len
         tax
         inx                     ; leading and trailing '/'
@@ -245,7 +251,8 @@ finish: jsr     close
         sta     INBUF+1         ; leading '/'
         sta     INBUF,x         ; trailing '/'
 
-done:   rts
+done:   clc
+        rts
 
 get_prefix_params:
         .byte   1

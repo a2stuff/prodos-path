@@ -78,6 +78,7 @@ VPATH2          := $BE6E        ; Pathname 2 buffer (RENAME)
 
 GOSYSTEM        := $BE70        ; Use instead of MLI
 
+BADCALL         := $BE8B        ; convert MLI errors into BI equivalents
 
 XRETURN         := $BE9E        ; Handy RTS
 
