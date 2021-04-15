@@ -29,24 +29,11 @@
         lda     #0
         sta     XCNUM
 
-        ;; NOTE: With PREFIX set, relative paths are fine.
-        ;; If PREFIX is not set, then:
-        ;; * Without PBitsFlags::SD:
-        ;;    * COPY REL,REL - fails - BAD
-        ;;    * COPY REL,/ABS - fails - BAD
-        ;;    * COPY /ABS,/ABS - works
-        ;;    * COPY /ABS,REL - fails - BAD
-        ;; * With PBitsFlags::SD:
-        ;;    * COPY REL,REL - works (FN1 & FN2 made absolute)
-        ;;    * COPY REL,/ABS - fails; FN1 becomes /PFX/REL, FN2 becomes /PFX//ABS - BAD
-        ;;    * COPY /ABS,/ABS - works (FN1 & FN2 left alone)
-        ;;    * COPY /ABS,REL - fails; FN2 remains relative - BAD
-
         ;; Set accepted parameter flags
 
         lda     #PBitsFlags::FN1 | PBitsFlags::FN2 ; Filenames
         sta     PBITS
-        lda     #PBitsFlags::SD ; Slot/Drive (and PREFIX)
+        lda     #0              ; See below for why PBitsFlags::SD is not used
         sta     PBITS+1
 
         clc                     ; Success (so far)
@@ -63,6 +50,22 @@
         DATALEN = $6000 - DATABUF
 
 execute:
+        ;; Fix relative paths. If PREFIX is not emptu, this is not needed.
+        ;; If PREFIX is empty, then relative paths will fail. Specifying
+        ;; PBitsFlags::SD is the usual fix for BI commands that take paths
+        ;; but while it will make FN1 absolute if needed it applies the
+        ;; same change to FN2 (nothing or prepending) without inspecting
+        ;; FN2. So REL,/ABS becomes /PFX/REL,/PFX//ABS (oops!) and
+        ;; /ABS,REL remains /ABS,REL (still relative!).
+
+        jsr     get_prefix
+        lda     VPATH1
+        ldx     VPATH1+1
+        jsr     fix_path
+        lda     VPATH2
+        ldx     VPATH2+1
+        jsr     fix_path
+
         ;; Get FN1 info
         lda     #$A
         sta     SSGINFO
@@ -209,5 +212,103 @@ finish: jsr     close
         jsr     GOSYSTEM
         rts
 .endproc
+
+;;; Leave PREFIX at INBUF; infers it the same way as BI if empty.
+.proc get_prefix
+        ;; Try fetching prefix
+        MLI_CALL GET_PREFIX, get_prefix_params
+        lda     INBUF
+        bne     done
+
+        ;; Use BI's current slot and drive to construct unit number
+        lda     DEFSLT          ; xxxxxSSS
+        asl                     ; xxxxSSS0
+        asl                     ; xxxSSS00
+        asl                     ; xxSSS000
+        asl                     ; xSSS0000
+        asl                     ; SSS00000
+        ldx     DEFDRV
+        cpx     #2              ; C=0 if 1, C=1 if 2
+        ror                     ; DSSS0000
+        sta     unit
+
+        ;; Get volume name and convert to path
+        MLI_CALL ON_LINE, on_line_params
+        ;; TODO: Handle failure
+        lda     INBUF+1
+        and     #$0F            ; mask off name_len
+        tax
+        inx                     ; leading and trailing '/'
+        inx
+        stx     INBUF
+        lda     #'/'
+        sta     INBUF+1         ; leading '/'
+        sta     INBUF,x         ; trailing '/'
+
+done:   rts
+
+get_prefix_params:
+        .byte   1
+        .addr   INBUF
+
+on_line_params:
+        .byte   2
+unit:   .byte   0
+        .addr   INBUF+1         ; leave room to insert leading '/'
+.endproc
+
+;;; Fix path passed in A,X if it's relative. Uses prefix in INBUF
+.proc fix_path
+        ptr := $06
+        ptr2 := $08
+
+        sta     ptr
+        stx     ptr+1
+
+        ;; Already relative?
+        ldy     #1
+        lda     (ptr),y
+        cmp     #'/'
+        beq     done
+
+        ;; Compute new length
+        ldy     #0
+        lda     (ptr),y
+        tay                     ; Y = current length
+        clc
+        adc     INBUF           ; add prefix length
+        pha                     ; stash for later
+
+        ;; Shift path up to make room
+        lda     INBUF
+        clc
+        adc     ptr
+        sta     ptr2
+        lda     #0
+        adc     ptr+1
+        sta     ptr2+1
+:       lda     (ptr),y
+        sta     (ptr2),y
+        dey
+        bpl     :-
+
+        ;; Insert prefix
+        lda     INBUF
+        tax
+        tay
+:       lda     INBUF,x
+        sta     (ptr),y
+        dex
+        dey
+        bne     :-
+
+        ;; Assign final length
+        pla
+        ldy     #0
+        sta     (ptr),y
+
+done:   rts
+.endproc
+
 
         .assert * <= FN2BUF, error, "Too long"

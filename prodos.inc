@@ -2,6 +2,7 @@
 ;;; ProDOS MLI / Global Page
 
 MLI             := $BF00
+DEVNUM          := $BF30
 DATE            := $BF90
 DATELO          := $BF90
 DATEHI          := $BF91
@@ -14,6 +15,7 @@ CREATE          = $C0
 SET_FILE_INFO   = $C3
 GET_FILE_INFO   = $C4
 ON_LINE         = $C5
+GET_PREFIX      = $C7
 OPEN            = $C8
 READ            = $CA
 WRITE           = $CB
@@ -30,11 +32,13 @@ CLOSE           = $CC
 
 EXTRNCMD        := $BE06        ; External command jmp vector
 ERROUT          := $BE09        ; Error routine jmp vector
-XTRNADDR        := $BE50        ; Ext cmd implementation addr
 
+DEFSLT          := $BE3C        ; Default slot, set by 'S' parm
+DEFDRV          := $BE3D        ; Default drive, set by 'D' parm
+
+XTRNADDR        := $BE50        ; Ext cmd implementation addr
 XLEN            := $BE52        ; Length of command string minus 1
 XCNUM           := $BE53        ; Command number (ext cmd = 0).
-
 PBITS           := $BE54        ; Command parameter bits
 FBITS           := $BE56        ; Found parameter bits
 
