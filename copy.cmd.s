@@ -29,11 +29,24 @@
         lda     #0
         sta     XCNUM
 
-        ;; Set accepted parameter flags (2 Filenames)
+        ;; NOTE: With PREFIX set, relative paths are fine.
+        ;; If PREFIX is not set, then:
+        ;; * Without PBitsFlags::SD:
+        ;;    * COPY REL,REL - fails - BAD
+        ;;    * COPY REL,/ABS - fails - BAD
+        ;;    * COPY /ABS,/ABS - works
+        ;;    * COPY /ABS,REL - fails - BAD
+        ;; * With PBitsFlags::SD:
+        ;;    * COPY REL,REL - works (FN1 & FN2 made absolute)
+        ;;    * COPY REL,/ABS - fails; FN1 becomes /PFX/REL, FN2 becomes /PFX//ABS - BAD
+        ;;    * COPY /ABS,/ABS - works (FN1 & FN2 left alone)
+        ;;    * COPY /ABS,REL - fails; FN2 remains relative - BAD
+
+        ;; Set accepted parameter flags
 
         lda     #PBitsFlags::FN1 | PBitsFlags::FN2 ; Filenames
         sta     PBITS
-        lda     #0
+        lda     #PBitsFlags::SD ; Slot/Drive (and PREFIX)
         sta     PBITS+1
 
         clc                     ; Success (so far)
