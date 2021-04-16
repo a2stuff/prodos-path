@@ -58,15 +58,15 @@ execute:
         ;; FN2. So REL,/ABS becomes /PFX/REL,/PFX//ABS (oops!) and
         ;; /ABS,REL remains /ABS,REL (still relative!).
 
-        jsr     get_prefix
+        jsr     GetPrefix
         bcs     rts1
 
         lda     VPATH1
         ldx     VPATH1+1
-        jsr     fix_path
+        jsr     FixPath
         lda     VPATH2
         ldx     VPATH2+1
-        jsr     fix_path
+        jsr     FixPath
 
         ;; Get FN1 info
         lda     #$A
@@ -77,9 +77,9 @@ execute:
 
         ;; Reject directory file
         lda     FIFILID
-        cmp     #$F             ; DIR
+        cmp     #FT_DIR
         bne     :+
-        lda     #$D             ; FILE TYPE MISMATCH
+        lda     #BI_ERR_FILE_TYPE_MISMATCH
         sec
 rts1:   rts
 :
@@ -124,16 +124,16 @@ rts1:   rts
         jsr     GOSYSTEM
         bcs     :+
 
-        lda     #$13            ; DUPLICATE FILE NAME
+        lda     #BI_ERR_DUPLICATE_FILE_NAME
 err:    pha
-        jsr     close
+        jsr     CloseFiles
         pla
         sec
         rts
 
-:       cmp     #6              ; BI Errors 6 and 7 cover
-        beq     :+              ; vol dir, pathname, or filename
-        cmp     #7              ; not found.
+:       cmp     #BI_ERR_PATH_NOT_FOUND
+        beq     :+
+        cmp     #BI_ERR_VOLUME_DIR_NOT_FOUND
         bne     err             ; Otherwise - fail.
 :
 
@@ -176,7 +176,7 @@ read:   lda     FN1REF
         lda     #READ
         jsr     GOSYSTEM
         bcc     :+
-        cmp     #5              ; END OF DATA
+        cmp     #BI_ERR_END_OF_DATA
         beq     finish
 :
 
@@ -197,11 +197,11 @@ read:   lda     FN1REF
         jmp     err
 
 
-finish: jsr     close
+finish: jsr     CloseFiles
         clc
         rts
 
-.proc close
+.proc CloseFiles
         lda     FN1REF
         sta     CFREFNUM
         lda     #CLOSE
@@ -215,7 +215,7 @@ finish: jsr     close
 
 ;;; Leave PREFIX at INBUF; infers it the same way as BI if empty.
 ;;; Returns with Carry set on failure.
-.proc get_prefix
+.proc GetPrefix
         ;; Try fetching prefix
         MLI_CALL GET_PREFIX, get_prefix_params
         lda     INBUF
@@ -263,7 +263,7 @@ unit:   .byte   0
 .endproc
 
 ;;; Fix path passed in A,X if it's relative. Uses prefix in INBUF
-.proc fix_path
+.proc FixPath
         ptr := $06
         ptr2 := $08
 

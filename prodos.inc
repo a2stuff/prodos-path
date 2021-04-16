@@ -27,6 +27,11 @@ CLOSE           = $CC
         .addr   params
 .endmacro
 
+FT_TXT  = $04
+FT_DIR  = $0F
+FT_CMD  = $F0
+FT_BAS  = $FC
+
 ;;; ============================================================
 ;;; BASIC.SYSTEM Global Page
 
@@ -132,3 +137,12 @@ CCCSPARE        := $BEDF
 GETBUFR         := $BEF5
 FREEBUFR        := $BEF8
 RSHIMEM         := $BEFB
+
+;;; Error Codes
+
+BI_ERR_END_OF_DATA              = 5
+BI_ERR_PATH_NOT_FOUND           = 6
+BI_ERR_VOLUME_DIR_NOT_FOUND     = 7 ; Also shows as PATH NOT FOUND
+BI_ERR_NO_BUFFERS_AVAILABLE     = 12
+BI_ERR_FILE_TYPE_MISMATCH       = 13
+BI_ERR_DUPLICATE_FILE_NAME      = 19

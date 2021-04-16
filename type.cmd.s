@@ -53,9 +53,9 @@ execute:
 
         ;; Reject directory file
         lda     FIFILID
-        cmp     #$F             ; DIR
+        cmp     #FT_DIR
         bne     :+
-        lda     #$D             ; FILE TYPE MISMATCH
+        lda     #BI_ERR_FILE_TYPE_MISMATCH
         sec
 rts1:   rts
 :
@@ -86,11 +86,11 @@ rts1:   rts
         sta     LINUM+1
 
         lda     FIFILID         ; File type
-        cmp     #$04            ; TXT
-        beq     text
-        cmp     #$FC            ; BAS
+        cmp     #FT_TXT
+        beq     Text
+        cmp     #FT_BAS
         bne     :+
-        jmp     basic
+        jmp     Basic
 :
 
          ;;  fall through
@@ -98,8 +98,8 @@ rts1:   rts
 ;;; ============================================================
 ;;; Generic (Binary) file
 
-.proc binary
-        jsr     ReadByte
+.proc Binary
+repeat: jsr     ReadByte
         bcc     :+
         jmp     Exit
 :       pha
@@ -155,31 +155,31 @@ cloop:  lda     INBUF,x
         bcc     :+
         inc     LINUM+1
 :
-        jmp     binary
+        jmp     Binary
 .endproc
 
 ;;; ============================================================
 ;;; Text file
 
-.proc text
-        jsr     ReadByte
+.proc Text
+repeat: jsr     ReadByte
         bcs     Exit
 
         ora     #$80
         cmp     #$8D            ; CR?
         beq     :+
         cmp     #' '|$80        ; other control character?
-        bcc     text            ; yes, ignore
+        bcc     repeat          ; yes, ignore
 
 :       jsr     COUT
-        jmp     text
+        jmp     repeat
 .endproc
 
 ;;; ============================================================
 ;;; BASIC file
 
-.proc basic
-        jsr     CROUT
+.proc Basic
+repeat: jsr     CROUT
         jsr     ReadByte        ; first two bytes are pointer to next line
         jsr     ReadByte
         bcs     Exit            ; EOF
@@ -196,7 +196,7 @@ cloop:  lda     INBUF,x
 
         ;; Line contents: EOL, token, or character?
 lloop:  jsr     ReadByte
-        beq     basic           ; EOL
+        beq     repeat          ; EOL
         bmi     token           ; token
 
 cout:   ora     #$80

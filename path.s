@@ -35,7 +35,7 @@ CASE_MASK = $DF
         lda     #handler_pages
         jsr     GETBUFR
         bcc     :+
-        lda     #$C             ; NO BUFFERS AVAILABLE
+        lda     #BI_ERR_NO_BUFFERS_AVAILABLE
         rts
 :       sta     new_page        ; A = MSB of new page
 
@@ -145,12 +145,12 @@ page_delta:
 
         ;; Check for this command, character by character.
         reloc_point *+2
-        jsr     skip_leading_spaces
+        jsr     SkipLeadingSpaces
 
         ldy     #0               ; position in command string
 
         reloc_point *+2
-nxtchr: jsr     to_upper_ascii
+nxtchr: jsr     ToUpperASCII
 
         reloc_point *+2
         cmp     command_string,y
@@ -193,9 +193,9 @@ check_if_token:
         beq     not_ours
 
         reloc_point *+2
-        jsr     skip_leading_spaces
+        jsr     SkipLeadingSpaces
         reloc_point *+2
-        jsr     to_upper_ascii
+        jsr     ToUpperASCII
 
         cmp     #'A'
         bcc     not_ours
@@ -223,7 +223,7 @@ mloop:  iny                     ; Advance through token table
         ;; Check for match
 next_char:
         reloc_point *+2
-        jsr     to_upper_ascii  ; Next character
+        jsr     ToUpperASCII    ; Next character
 
         ;; NOTE: Does not skip over spaces, unlike BASIC tokenizer
 
@@ -238,7 +238,7 @@ next_char:
         ;; without preventing 'RUN100' from being typed.
 
         inx
-        jsr     to_upper_ascii
+        jsr     ToUpperASCII
         cmp     #'A'
         bcc     not_ours
         cmp     #'Z'+1
@@ -247,7 +247,7 @@ next_char:
         ;; Otherwise, advance to next token
 next_token:
         reloc_point *+2
-        jsr     skip_leading_spaces
+        jsr     SkipLeadingSpaces
 sloop:  lda     (tptr),y         ; Scan table looking for a high bit set
         iny
         bne     :+
@@ -302,9 +302,9 @@ compose:
 
         ;; Name from command line
         reloc_point *+2
-        jsr     skip_leading_spaces
+        jsr     SkipLeadingSpaces
         reloc_point *+2
-:       jsr     to_upper_ascii
+:       jsr     ToUpperASCII
         cmp     #'.'
         beq     ok
         cmp     #'0'
@@ -341,7 +341,7 @@ notok:  dey
 
         ;; Check to see if type is CMD.
         lda     FIFILID
-        cmp     #$F0            ; CMD
+        cmp     #FT_CMD
         bne     compose         ; wrong type - try next path directory
 
         ;; Tell BASIC.SYSTEM it was handled.
@@ -454,7 +454,7 @@ set_path:
 ;;; Returns INBUF,x with high bit stripped and up-cased
 ;;; (also converts {|}~DEL to [\]^_ but that's okay)
 
-.proc to_upper_ascii
+.proc ToUpperASCII
         lda     INBUF,x
         and     #$7F
         cmp     #'a'
@@ -466,7 +466,7 @@ skip:   rts
 ;;; Returns with X pointing at first non-space in INBUF,
 ;;; and that character loaded in A.
 
-.proc skip_leading_spaces
+.proc SkipLeadingSpaces
         ldx     #$FF
 :       inx
         lda     INBUF,x

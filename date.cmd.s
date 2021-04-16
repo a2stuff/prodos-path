@@ -31,7 +31,9 @@ start:
 ;;; TIME:    |0 0 0|   hour  | |0 0|  minute   |
 ;;;          +-+-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+
 
-        MLI_CALL GET_TIME, 0
+        lda     #GET_TIME
+        jsr     GOSYSTEM
+
         lda     DATELO
         ora     DATEHI
         beq     not_set
@@ -48,20 +50,20 @@ start:
         rol     a
         rol     a
         and     #%00001111
-        jsr     cout_number
+        jsr     PrintNumber
 
         lda     #'/'|$80        ; /
         jsr     COUT
 
         pla                     ; day
         and     #%00011111
-        jsr     cout_number
+        jsr     PrintNumber
 
         lda     #'/'|$80        ; /
         jsr     COUT
 
         pla                     ; year
-        jsr     cout_number
+        jsr     PrintNumber
 
         lda     #' '|$80        ;
         jsr     COUT
@@ -71,14 +73,14 @@ start:
 
         lda     TIMELO+1        ; hour
         and     #%00011111
-        jsr     cout_number
+        jsr     PrintNumber
 
         lda     #':'|$80        ; ':'
         jsr     COUT
 
         lda     TIMELO          ; minute
         and     #%00111111
-        jsr     cout_number
+        jsr     PrintNumber
 
 finish: jsr     CROUT
 
@@ -100,7 +102,7 @@ msg:    .byte   "<NO DATE>", 0
 ;;; ============================================================
 ;;; Print a 2-digit number, with leading zeros
 
-.proc cout_number
+.proc PrintNumber
         ;; Reduce to 2 digits
 :       cmp     #100
         bcc     :+

@@ -8,7 +8,7 @@
         ldx     #0
 
         ;; Skip any leading spaces
-        jsr     skip_spaces
+        jsr     SkipSpaces
 
         ;; Invoked with "-" ?
         lda     INBUF,x
@@ -17,7 +17,7 @@
         inx
 :
         ;; Skip any more leading spaces
-        jsr     skip_spaces
+        jsr     SkipSpaces
 
         ;; Skip command name (i.e. "echo")
         txa
@@ -26,7 +26,7 @@
         tax
 
         ;; Skip leading spaces before string to echo
-        jsr     skip_spaces
+        jsr     SkipSpaces
 
         ;; Echo string
 :       lda     INBUF,x
@@ -39,13 +39,13 @@
 exit:   clc
         rts
 
-.proc skip_spaces
-        lda     INBUF,x
+.proc SkipSpaces
+repeat: lda     INBUF,x
         cmp     #' '|$80
         beq     :+
         rts
 :       inx
-        jmp     skip_spaces
+        jmp     repeat
 .endproc
 
 cmd_length = .strlen("echo")
