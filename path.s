@@ -254,7 +254,7 @@ sloop:  lda     (tptr),y         ; Scan table looking for a high bit set
         inc     tptr+1
 :       asl
         bcc     sloop           ; High bit clear, keep looking
-        lda     (tptr),y         ; End of table?
+        lda     (tptr),y        ; End of table?
         bne     next_char       ; Nope, check for a match
         beq     maybe_invoke
 
@@ -335,7 +335,8 @@ notok:  dey
         ;; Check to see if path exists.
         lda     #$A             ; param length
         sta     SSGINFO
-        MLI_CALL GET_FILE_INFO, SSGINFO
+        lda     #GET_FILE_INFO
+        jsr     GOSYSTEM
         bne     compose         ; no such file - try next path directory
 
         ;; Check to see if type is CMD.
@@ -360,17 +361,14 @@ notok:  dey
         dex
         bpl     :-
 
-        ;; Reserve buffer for I/O
-        lda     #4
-        jsr     GETBUFR
-        bcc     :+
-        lda     #$C             ; NO BUFFERS AVAILABLE
-        rts
-:       sta     OSYSBUF+1
+        ;; Use BI general purpose buffer for I/O (page aligned)
+        lda     HIMEM+1
+        sta     OSYSBUF+1
 
         ;; Now try to open/read/close and invoke it
-        MLI_CALL OPEN, SOPEN
-        bne     fail_load
+        lda     #OPEN
+        jsr     GOSYSTEM
+        bcs     fail_load
 
         lda     OREFNUM
         sta     RWREFNUM
@@ -385,11 +383,16 @@ notok:  dey
         lda     #>max_cmd_size
         sta     RWCOUNT+1
 
-        MLI_CALL READ, SREAD
-        bne     fail_load
+        lda     #READ
+        jsr     GOSYSTEM
+        php                     ; save C in case it signals failure
+        pha                     ; if so, A has error code
 
-        MLI_CALL CLOSE, SCLOSE
-        jsr     FREEBUFR
+        lda     #CLOSE          ; always close
+        jsr     GOSYSTEM
+        pla
+        plp
+        bcs     fail_load
 
         ;; Restore INBUF now that MLI/BI work is done.
         ldx     #$7F
@@ -398,17 +401,12 @@ notok:  dey
         dex
         bpl     :-
 
-        ;; Invoke command
-        jsr     cmd_load_addr
-
-        rts                     ; Return to BASIC.SYSTEM
+        ;; Invoke command, allow it to return to BASIC.SYSTEM
+        jmp     cmd_load_addr
 
 fail_load:
-        jsr     FREEBUFR
-        reloc_point *+2
-        jmp     fail_invoke
+        rts
 
-;;; ============================================================
 ;;; ============================================================
 
 execute:

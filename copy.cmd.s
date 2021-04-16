@@ -92,9 +92,7 @@ rts1:   rts
         bpl     :-
 
         ;; Open FN1
-        lda     HIMEM           ; Use BI's general purpose buffer
-        sta     OSYSBUF
-        lda     HIMEM+1
+        lda     HIMEM+1         ; Use BI's general purpose buffer (page aligned)
         sta     OSYSBUF+1
         lda     #OPEN
         jsr     GOSYSTEM

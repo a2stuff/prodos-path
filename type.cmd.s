@@ -60,9 +60,7 @@ execute:
 rts1:   rts
 :
         ;; Open the file
-        lda     HIMEM           ; Use BI's buffer above HIMEM
-        sta     OSYSBUF
-        lda     HIMEM+1
+        lda     HIMEM+1         ; Use BI's general purpose buffer (page aligned)
         sta     OSYSBUF+1
         lda     #OPEN
         jsr     GOSYSTEM
