@@ -315,5 +315,15 @@ unit:   .byte   0
 done:   rts
 .endproc
 
+.proc SkipSpaces
+repeat: lda     INBUF,x
+        cmp     #' '|$80
+        beq     :+
+        rts
+:       inx
+        jmp     repeat
+.endproc
+
+cmd_length = .strlen("echo")
 
         .assert * <= FN2BUF, error, "Too long"

@@ -9,7 +9,7 @@ Build with [ca65](https://cc65.github.io/doc/ca65.html)
 ## Instructions For Users
 
 Installation:
-* Copy files from the floppy disk image to your Apple's hard disk, in a subdirectory e.g. `/HD/CMD` 
+* Copy files from the floppy disk image to your Apple's hard disk, in a subdirectory e.g. `/HD/CMD`
 * From BASIC.SYSTEM prompt, run: `PATH`, e.g. `-/HD/CMD/PATH`, either from `STARTUP` or manually
 
 After installation, the usage is:
@@ -40,6 +40,7 @@ Notes:
 Sample commands included:
 * `HELLO` - shows a short message, for testing purposes
 * `ECHO` - echoes back anything following the command
+* `CD` - like `PREFIX` but accepts `..`, e.g. `cd ../dir`
 * `ONLINE` - lists online volumes (volume name, slot and drive)
 * `COPY` - copy a single file, e.g. `copy /path/to/file,dstfile`
 * `TYPE` - show file contents (TXT, BAS, or BIN/other), e.g. `type filename`

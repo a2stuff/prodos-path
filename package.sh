@@ -18,7 +18,7 @@ add_file () {
 }
 
 add_file "out/path.BIN" "path#062000"
-for file in bell echo hello online chtype chtime copy date type buzz; do
+for file in bell echo hello online chtype chtime copy date type buzz cd; do
     add_file "out/${file}.CMD" "${file}#F04000"
 done
 

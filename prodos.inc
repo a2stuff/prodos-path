@@ -15,6 +15,7 @@ CREATE          = $C0
 SET_FILE_INFO   = $C3
 GET_FILE_INFO   = $C4
 ON_LINE         = $C5
+SET_PREFIX      = $C6
 GET_PREFIX      = $C7
 OPEN            = $C8
 READ            = $CA
@@ -140,9 +141,24 @@ RSHIMEM         := $BEFB
 
 ;;; Error Codes
 
+BI_ERR_RANGE_ERROR              = 2
+BI_ERR_NO_DEVICE_CONNECTED      = 3
+BI_ERR_WRITE_PROTECTED          = 4
 BI_ERR_END_OF_DATA              = 5
 BI_ERR_PATH_NOT_FOUND           = 6
 BI_ERR_VOLUME_DIR_NOT_FOUND     = 7 ; Also shows as PATH NOT FOUND
+BI_ERR_IO_ERROR                 = 8
+BI_ERR_DISK_FULL                = 9
+BI_ERR_FILE_LOCKED              = 10
+BI_ERR_INVALID_PARAMETER        = 11
 BI_ERR_NO_BUFFERS_AVAILABLE     = 12
 BI_ERR_FILE_TYPE_MISMATCH       = 13
+BI_ERR_PROGRAM_TOO_LARGE        = 14
+BI_ERR_NOT_DIRECT_COMMAND       = 15
+BI_ERR_SYNTAX_ERROR             = 16
+BI_ERR_DIRECTORY_FULL           = 17
+BI_ERR_FILE_NOT_OPEN            = 18
 BI_ERR_DUPLICATE_FILE_NAME      = 19
+BI_ERR_FILE_BUSY                = 20
+BI_ERR_FILES_STILL_OPEN         = 21
+BI_ERR_DIRECT_COMMAND           = 22
