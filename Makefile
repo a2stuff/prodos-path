@@ -5,10 +5,7 @@ LDFLAGS := --config apple2-asm.cfg
 OUTDIR := out
 
 TARGETS := $(OUTDIR)/path.BIN \
-	$(OUTDIR)/cd.CMD \
-	$(OUTDIR)/chtype.CMD $(OUTDIR)/chtime.CMD $(OUTDIR)/buzz.CMD \
-	$(OUTDIR)/copy.CMD $(OUTDIR)/date.CMD $(OUTDIR)/type.CMD \
-	$(OUTDIR)/bell.CMD $(OUTDIR)/hello.CMD $(OUTDIR)/echo.CMD $(OUTDIR)/online.CMD
+	$(shell cat COMMANDS | while read line; do echo "out/$${line}.CMD"; done)
 
 XATTR := $(shell command -v xattr 2> /dev/null)
 
