@@ -21,7 +21,6 @@
         ;; Point BI's parser at the command execution routine.
         lda     #<execute
         sta     XTRNADDR
-        page_num2 := *+1         ; address needing updating
         lda     #>execute
         sta     XTRNADDR+1
 

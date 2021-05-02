@@ -44,6 +44,7 @@ Sample commands included:
 * `ONLINE` - lists online volumes (volume name, slot and drive)
 * `COPY` - copy a single file, e.g. `copy /path/to/file,dstfile`
 * `TYPE` - show file contents (TXT, BAS, or BIN/other), e.g. `type filename`
+* `TOUCH` - apply current ProDOS date/time to a file's modification time, e.g. `touch filename`
 * `DATE` - prints the current ProDOS date and time
 * `CHTYPE` - change the type/auxtype of a file, e.g. `chtype file,T$F1,A$1234`
     * `T` (type) and `A` (auxtype) are optional. If neither is specified, current types are shown.
