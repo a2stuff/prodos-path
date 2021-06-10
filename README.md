@@ -1,6 +1,6 @@
 # CMD executable PATH for ProDOS's BASIC.SYSTEM
 
-[![Build Status](https://travis-ci.org/a2stuff/prodos-path.svg?branch=master)](https://travis-ci.org/a2stuff/prodos-path)
+[![Build Status](https://travis-ci.com/a2stuff/prodos-path.svg?branch=master)](https://travis-ci.com/a2stuff/prodos-path)
 
 💾 Disk images can be found on the [Releases](https://github.com/a2stuff/prodos-path/releases) page 💾
 
