@@ -238,6 +238,7 @@ next_char:
         ;; without preventing 'RUN100' from being typed.
 
         inx
+        reloc_point *+2
         jsr     ToUpperASCII
         cmp     #'A'
         bcc     not_ours
