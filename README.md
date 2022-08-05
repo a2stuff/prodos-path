@@ -42,6 +42,7 @@ Sample commands included:
 * `ECHO` - echoes back anything following the command
 * `CD` - like `PREFIX` but accepts `..`, e.g. `cd ../dir`
 * `ONLINE` - lists online volumes (volume name, slot and drive)
+* `MEM` - show memory stats for the BASIC environment
 * `COPY` - copy a single file, e.g. `copy /path/to/file,dstfile`
 * `TYPE` - show file contents (TXT, BAS, or BIN/other), e.g. `type filename`
 * `TOUCH` - apply current ProDOS date/time to a file's modification time, e.g. `touch filename`
