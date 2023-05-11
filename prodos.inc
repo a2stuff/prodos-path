@@ -33,6 +33,13 @@ FT_DIR  = $0F
 FT_CMD  = $F0
 FT_BAS  = $FC
 
+ACCESS_D  = %10000000           ; Access: Destroy-Enable
+ACCESS_RN = %01000000           ; Access: Rename-Enable
+ACCESS_B  = %00100000           ; Access: Backup
+ACCESS_I  = %00000100           ; Access: Invisible
+ACCESS_W  = %00000010           ; Access: Write-Enable
+ACCESS_R  = %00000001           ; Access: Read-Enable
+
 ;;; ============================================================
 ;;; BASIC.SYSTEM Global Page
 

@@ -55,6 +55,7 @@ Sample commands included:
     * `S` and `D` arguments can be used to specify slot and drive.
 * `BELL` - emits the standard Apple II beep
 * `BUZZ` - emits the ProDOS "nice little tone"
+* `HIDE` / `UNHIDE` - sets / clears the "invisible" bit on a file, used in GS/OS Finder
 
 
 ## Instructions For Developers
