@@ -171,15 +171,14 @@ nxtchr: jsr     ToUpperASCII
         lda     #>execute
         sta     XTRNADDR+1
 
-        ;; Mark command as external (zero).
-        lda     #0
-        sta     XCNUM
-
         ;; Set accepted parameter flags (optional name)
         lda     #PBitsFlags::FNOPT | PBitsFlags::FN1
         sta     PBITS
         lda     #0
         sta     PBITS+1
+
+        ;; Mark command as external (zero).
+        sta     XCNUM           ; A=0 from above
 
         clc                     ; Success (so far)
         rts                     ; Return to BASIC.SYSTEM
