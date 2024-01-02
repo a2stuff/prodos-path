@@ -197,6 +197,18 @@ read:   lda     FN1REF
 
 
 finish: jsr     CloseFiles
+
+        ;; Apply FN1 info to FN2 to preserve modification date
+        ldx     #$D - 3
+:       lda     FN1INFO+3,x
+        sta     SSGINFO+3,x
+        dex
+        bpl     :-
+        lda     #$7
+        sta     SSGINFO
+        lda     #SET_FILE_INFO
+        jsr     GOSYSTEM
+
         clc
         rts
 
