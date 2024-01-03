@@ -330,7 +330,7 @@ notok:  dey
 
         ;; Indicate end of command string for BI's parser (if command uses it)
         dex
-        stx     XLEN
+        stx     xlen            ; assigned to `XLEN` later
 
         ;; Check to see if path exists.
         lda     #$A             ; param length
@@ -345,14 +345,11 @@ notok:  dey
         bne     compose         ; wrong type - try next path directory
 
         ;; Tell BASIC.SYSTEM it was handled.
-        lda     #0
-        sta     XCNUM
-        sta     PBITS
-        sta     PBITS+1
-        lda     #<XRETURN
-        sta     XTRNADDR
-        lda     #>XRETURN
-        sta     XTRNADDR+1
+        ldx     #xtrnaddr_len - 1
+:       lda     xtrnaddr,x
+        sta     XTRNADDR,x
+        dex
+        bpl     :-
 
         ;; MLI/BI trashes part of INBUF (clock driver?), so stash it in upper half.
         ldx     #$7F
@@ -374,14 +371,12 @@ notok:  dey
         sta     RWREFNUM
         sta     CFREFNUM
 
-        lda     #<cmd_load_addr
-        sta     RWDATA
-        lda     #>cmd_load_addr
-        sta     RWDATA+1
-        lda     #<max_cmd_size
-        sta     RWCOUNT
-        lda     #>max_cmd_size
-        sta     RWCOUNT+1
+        ;; Assign `RWDATA` and `RWCOUNT`
+        ldx     #rwdata_len - 1
+:       lda     rwdata,x
+        sta     RWDATA,x
+        dex
+        bpl     :-
 
         lda     #READ
         jsr     GOSYSTEM
@@ -406,6 +401,22 @@ notok:  dey
 
 fail_load:
         rts
+
+
+;;; Assigned to `XTRNADDR`, `XLEN`, `XCNUM`, and `PBITS`
+xtrnaddr:
+        .addr   XRETURN         ; assigned to `XTRNADDR`
+xlen:   .byte   0               ; assigned to `XLEN`
+        .byte   0               ; assigned to `XCNUM`
+        .word   0               ; assigned to `PBITS`
+        xtrnaddr_len = * - xtrnaddr
+
+
+;;; Assigned to `RWDATA` and `RWCOUNT`
+rwdata:
+        .addr   cmd_load_addr   ; assigned to `RWDATA`
+        .word   max_cmd_size    ; assigned to `RWCOUNT`
+        rwdata_len = * - rwdata
 
 ;;; ============================================================
 

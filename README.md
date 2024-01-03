@@ -36,6 +36,9 @@ Example:
 Notes:
 * `PATH` can be invoked as lower case (e.g. `path /hd/cmd`)
 * Commands can be invoked as lower case (e.g. `hello`)
+* A relative `PATH` (e.g. `path bin`) only works if an explicit prefix is set.
+  * Note that if no prefix has been set, or if you run `prefix /`, BASIC.SYSTEM will use the last accessed slot and drive and the `PREFIX` command will report that volume as a prefix even though it is empty.
+
 
 Sample commands included:
 * `HELLO` - shows a short message, for testing purposes
