@@ -25,8 +25,8 @@ cmdname         - load and execute named CMD, if in PATH
 Example:
 ```
 ] -/hd/cmd/path          - install it
-] PATH /hd/cmd:/h2/bin  - set PATH
-] PATH                   - verify path
+] PATH /hd/cmd:/h2/bin   - set search path with two directories
+] PATH                   - verify search path
 /hd/cmd:/h2/bin
 ] BELL                   - will invoke /hd/cmd/BELL if present
 ] HELLO                  - will invoke /hd/cmd/HELLO if present
@@ -75,7 +75,9 @@ Behavior of `PATH`:
 
 Protocol for `CMD` files:
 
-* CMD file is loaded at $4000 and invoked; should return (`rts`) on completion.
+* CMD file is loaded at $4000 and invoked.
 * $4000-$5FFF is assumed reserved for the CMD file and any buffers it needs.
 * The command line will be present at $200 (`GETLN` input buffer).
 * Commands can use the BI parser for arguments. See `chtype.cmd.s` for an example.
+* Exit with `CLC` then `RTS` to return to the ProDOS BASIC prompt.
+    * To signal an error, `LDA` with a BI error code, then `SEC` and `RTS`.
