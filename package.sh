@@ -5,12 +5,15 @@
 
 set -e
 
-PACKDIR=$(mktemp -d)
+
 IMGFILE="out/prodos-path.po"
 VOLNAME="path"
 
 rm -f "$IMGFILE"
 cadius CREATEVOLUME "$IMGFILE" "$VOLNAME" 140KB --no-case-bits --quiet
+
+PACKDIR=$(mktemp -d)
+trap "rm -r $PACKDIR" EXIT
 
 add_file () {
     cp "$1" "$PACKDIR/$2"
@@ -22,6 +25,5 @@ for file in $(cat COMMANDS); do
     add_file "out/${file}.CMD" "${file}#F04000"
 done
 
-rm -r "$PACKDIR"
 
-cadius CATALOG "$IMGFILE"
+cadius CATALOG "$IMGFILE" | cut -c1-$(tput cols)
